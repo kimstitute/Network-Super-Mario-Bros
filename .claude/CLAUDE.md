@@ -1,332 +1,332 @@
-# Network Super Mario Bros - Development Plan
+# 네트워크 슈퍼 마리오 브라더스 - 개발 계획
 
-## Project Overview
+## 프로젝트 개요
 
-### Original Game
-- **Source**: Classic Super Mario Bros game implemented in Java
-- **Original Repository**: https://github.com/ahmetcandiroglu/Super-Mario-Bros
-- **Base Implementation**: Single-player platformer game with complete game mechanics
+### 원본 게임
+- **출처**: Java로 구현된 클래식 슈퍼 마리오 브라더스 게임
+- **원본 저장소**: https://github.com/ahmetcandiroglu/Super-Mario-Bros
+- **기본 구현**: 완전한 게임 메커니즘을 갖춘 싱글플레이어 플랫포머 게임
 
-### Course Requirements
-- **Course**: Network Programming (네트워크프로그래밍)
-- **Deadline**: December 14, 2024 (midnight)
-- **Team**: Individual project
-- **Objective**: Extend existing single-player game to network multiplayer using Java socket programming
+### 과제 요구사항
+- **과목**: 네트워크프로그래밍
+- **마감**: 2024년 12월 14일 자정
+- **팀 구성**: 1인 프로젝트
+- **목표**: 기존 싱글플레이어 게임을 Java 소켓 프로그래밍을 활용한 네트워크 멀티플레이어로 확장
 
-### Deliverables
-1. Final Report (PPT) with contribution breakdown
-2. Demo Video (5-10 minutes) - feature explanation + code review
-3. Final Source Code (complete Eclipse project)
-4. Original Source Code + Original execution video (open-source usage)
+### 제출물
+1. 최종 보고서(PPT) - 기여도 포함
+2. 시연 동영상(5-10분) - 기능 설명 + 본인 구현 코드 리뷰
+3. 최종 소스코드(이클립스 프로젝트 전체)
+4. 원본 소스코드 + 원본 실행 영상(오픈소스 사용 시)
 
-### Evaluation Criteria (각 20%)
-- Feature Completeness
-- Difficulty & Creativity
-- Code Understanding (code review)
-- Code Quality (readability, maintainability, encapsulation)
-- Collaboration & Submission Integrity
+### 평가 기준 (각 20%)
+- 기능 완성도
+- 난이도·창의성
+- 코드 이해도(코드 리뷰)
+- 코드 품질(가독성·유지보수·캡슐화)
+- 협업·의사소통 및 제출 성실성
 
 ---
 
-## Technical Stack
+## 기술 스택
 
-### Core Technologies
-- **Language**: Java
-- **GUI Framework**: Java Swing
-- **Networking**: Java Socket Programming (TCP/UDP)
-- **Build Tool**: Manual compilation (Eclipse project)
-- **Version Control**: Git + GitHub
+### 핵심 기술
+- **언어**: Java
+- **GUI 프레임워크**: Java Swing
+- **네트워킹**: Java Socket Programming (TCP/UDP)
+- **빌드 도구**: 수동 컴파일 (Eclipse 프로젝트)
+- **버전 관리**: Git + GitHub
 
-### Project Structure
+### 프로젝트 구조
 ```
 src/
-├── manager/           # Game logic management
-│   ├── GameEngine.java
-│   ├── MapManager.java
-│   ├── SoundManager.java
-│   ├── InputManager.java
-│   └── Camera.java
-├── model/            # Game objects
-│   ├── hero/        # Mario, Fireball
-│   ├── enemy/       # Goomba, KoopaTroopa
-│   ├── brick/       # Blocks and pipes
-│   └── prize/       # Items and power-ups
-├── view/            # UI and rendering
-│   ├── UIManager.java
-│   ├── ImageLoader.java
-│   └── Animation.java
-└── network/         # Network layer (TO BE IMPLEMENTED)
-    ├── server/
-    ├── client/
-    └── protocol/
+├── manager/           # 게임 로직 관리
+│   ├── GameEngine.java      # 게임 엔진
+│   ├── MapManager.java      # 맵 관리
+│   ├── SoundManager.java    # 사운드 관리
+│   ├── InputManager.java    # 입력 관리
+│   └── Camera.java          # 카메라
+├── model/            # 게임 오브젝트
+│   ├── hero/        # 마리오, 파이어볼
+│   ├── enemy/       # 굼바, 쿠파 트루파
+│   ├── brick/       # 블록과 파이프
+│   └── prize/       # 아이템과 파워업
+├── view/            # UI 및 렌더링
+│   ├── UIManager.java       # UI 관리
+│   ├── ImageLoader.java     # 이미지 로딩
+│   └── Animation.java       # 애니메이션
+└── network/         # 네트워크 레이어 (구현 예정)
+    ├── server/      # 서버
+    ├── client/      # 클라이언트
+    └── protocol/    # 프로토콜
 ```
 
 ---
 
-## Architecture Design
+## 아키텍처 설계
 
-### Network Architecture (TO BE DESIGNED)
+### 네트워크 아키텍처 (설계 예정)
 
-**Client-Server Model**
-- Server: Game state authority, physics simulation, collision detection
-- Client: Rendering, input handling, state synchronization
+**클라이언트-서버 모델**
+- 서버: 게임 상태 권한, 물리 시뮬레이션, 충돌 감지
+- 클라이언트: 렌더링, 입력 처리, 상태 동기화
 
-**Communication Protocol**
-- Transport: TCP for reliable state sync, UDP for real-time input (TBD)
-- Message Format: Custom protocol for game events
+**통신 프로토콜**
+- 전송 방식: TCP(신뢰성 있는 상태 동기화), UDP(실시간 입력) - 미정
+- 메시지 포맷: 게임 이벤트용 커스텀 프로토콜
 
-**Synchronization Strategy**
-- Server-authoritative model
-- Client-side prediction (optional)
-- Lag compensation (optional)
+**동기화 전략**
+- 서버 권한 모델
+- 클라이언트 예측 (선택사항)
+- 지연 보상 (선택사항)
 
-### Design Decisions (TO BE MADE)
-- [ ] TCP vs UDP vs Hybrid approach
-- [ ] Game state synchronization frequency
-- [ ] Handling network latency
-- [ ] Player disconnection handling
-- [ ] Game lobby system
-
----
-
-## Implementation Plan
-
-### Phase 1: Analysis & Design (Current)
-**Goal**: Understand existing codebase and design network architecture
-
-**Tasks**:
-- [x] Set up project repository
-- [x] Initialize Git and push to GitHub
-- [x] Set up development documentation
-- [ ] Analyze existing game architecture
-- [ ] Design network communication protocol
-- [ ] Design client-server architecture
-- [ ] Create UML diagrams (sequence, class)
-
-### Phase 2: Core Network Infrastructure
-**Goal**: Implement basic client-server communication
-
-**Tasks**:
-- [ ] Implement server socket
-- [ ] Implement client socket
-- [ ] Define custom protocol (message format)
-- [ ] Test basic connection/disconnection
-- [ ] Implement game lobby system
-
-### Phase 3: Game State Synchronization
-**Goal**: Synchronize game state between server and clients
-
-**Tasks**:
-- [ ] Refactor GameEngine for network support
-- [ ] Implement server-side game loop
-- [ ] Implement state serialization/deserialization
-- [ ] Synchronize player positions
-- [ ] Synchronize enemy positions
-- [ ] Synchronize item states
-
-### Phase 4: Multiplayer Features
-**Goal**: Add multiplayer-specific game mechanics
-
-**Tasks**:
-- [ ] Multiple player rendering
-- [ ] Player interaction (cooperation/competition)
-- [ ] Scoring system for multiplayer
-- [ ] Win/lose conditions
-- [ ] Player name display
-
-### Phase 5: Testing & Polish
-**Goal**: Bug fixes, optimization, and documentation
-
-**Tasks**:
-- [ ] Network latency testing
-- [ ] Edge case handling (disconnection, timeout)
-- [ ] Performance optimization
-- [ ] Code cleanup and refactoring
-- [ ] Code documentation
-
-### Phase 6: Presentation Materials
-**Goal**: Prepare deliverables
-
-**Tasks**:
-- [ ] Record demo video
-- [ ] Prepare final report PPT
-- [ ] Document source file list and execution order
-- [ ] Prepare original source comparison
-- [ ] Write contribution breakdown
+### 설계 결정사항 (결정 필요)
+- [ ] TCP vs UDP vs 하이브리드 방식
+- [ ] 게임 상태 동기화 주기
+- [ ] 네트워크 지연 처리 방법
+- [ ] 플레이어 연결 끊김 처리
+- [ ] 게임 로비 시스템
 
 ---
 
-## Development Guidelines
+## 구현 계획
 
-### Coding Conventions
+### Phase 1: 분석 및 설계 (현재)
+**목표**: 기존 코드베이스 이해 및 네트워크 아키텍처 설계
+
+**작업**:
+- [x] 프로젝트 저장소 설정
+- [x] Git 초기화 및 GitHub 푸시
+- [x] 개발 문서 설정
+- [ ] 기존 게임 아키텍처 분석
+- [ ] 네트워크 통신 프로토콜 설계
+- [ ] 클라이언트-서버 아키텍처 설계
+- [ ] UML 다이어그램 작성 (시퀀스, 클래스)
+
+### Phase 2: 핵심 네트워크 인프라
+**목표**: 기본 클라이언트-서버 통신 구현
+
+**작업**:
+- [ ] 서버 소켓 구현
+- [ ] 클라이언트 소켓 구현
+- [ ] 커스텀 프로토콜 정의 (메시지 포맷)
+- [ ] 기본 연결/연결 해제 테스트
+- [ ] 게임 로비 시스템 구현
+
+### Phase 3: 게임 상태 동기화
+**목표**: 서버와 클라이언트 간 게임 상태 동기화
+
+**작업**:
+- [ ] GameEngine을 네트워크 지원 가능하도록 리팩토링
+- [ ] 서버 측 게임 루프 구현
+- [ ] 상태 직렬화/역직렬화 구현
+- [ ] 플레이어 위치 동기화
+- [ ] 적 위치 동기화
+- [ ] 아이템 상태 동기화
+
+### Phase 4: 멀티플레이어 기능
+**목표**: 멀티플레이어 전용 게임 메커니즘 추가
+
+**작업**:
+- [ ] 다중 플레이어 렌더링
+- [ ] 플레이어 상호작용 (협력/경쟁)
+- [ ] 멀티플레이어용 점수 시스템
+- [ ] 승리/패배 조건
+- [ ] 플레이어 이름 표시
+
+### Phase 5: 테스트 및 개선
+**목표**: 버그 수정, 최적화, 문서화
+
+**작업**:
+- [ ] 네트워크 지연 테스트
+- [ ] 엣지 케이스 처리 (연결 끊김, 타임아웃)
+- [ ] 성능 최적화
+- [ ] 코드 정리 및 리팩토링
+- [ ] 코드 문서화
+
+### Phase 6: 발표 자료 준비
+**목표**: 제출물 준비
+
+**작업**:
+- [ ] 시연 동영상 녹화
+- [ ] 최종 보고서 PPT 작성
+- [ ] 소스 파일 목록 및 실행 순서 문서화
+- [ ] 원본 소스 비교 자료 준비
+- [ ] 기여도 작성
+
+---
+
+## 개발 가이드라인
+
+### 코딩 규칙
 ```java
-// Class naming: PascalCase
+// 클래스명: PascalCase
 public class NetworkManager { }
 
-// Method naming: camelCase
+// 메서드명: camelCase
 public void handlePlayerInput() { }
 
-// Constants: UPPER_SNAKE_CASE
+// 상수: UPPER_SNAKE_CASE
 private static final int MAX_PLAYERS = 4;
 
-// Package naming: lowercase
+// 패키지명: lowercase
 package network.server;
 ```
 
-### Git Workflow
+### Git 워크플로우
 ```
-1. Work on feature branches
-2. Commit frequently with descriptive messages
-3. Format: "feat(scope): description"
-   - feat: new feature
-   - fix: bug fix
-   - refactor: code refactoring
-   - docs: documentation
-   - test: testing
-4. Push to GitHub regularly
+1. 기능 브랜치에서 작업
+2. 자주, 명확한 메시지로 커밋
+3. 포맷: "feat(범위): 설명"
+   - feat: 새 기능
+   - fix: 버그 수정
+   - refactor: 코드 리팩토링
+   - docs: 문서화
+   - test: 테스트
+4. GitHub에 정기적으로 푸시
 ```
 
-### Commit Message Examples
+### 커밋 메시지 예시
 ```
-feat(network): implement basic server socket
-fix(sync): resolve player position desync issue
-refactor(protocol): simplify message format
-docs(architecture): add network design diagrams
+feat(network): 기본 서버 소켓 구현
+fix(sync): 플레이어 위치 동기화 오류 해결
+refactor(protocol): 메시지 포맷 단순화
+docs(architecture): 네트워크 설계 다이어그램 추가
 ```
 
 ---
 
-## Key Features to Implement
+## 구현해야 할 핵심 기능
 
-### Must-Have Features
-1. **Network Connection**
-   - Server-client connection establishment
-   - Multiple client support (2-4 players)
+### 필수 기능
+1. **네트워크 연결**
+   - 서버-클라이언트 연결 수립
+   - 다중 클라이언트 지원 (2-4명)
 
-2. **Game State Sync**
-   - Player position synchronization
-   - Game object state synchronization
+2. **게임 상태 동기화**
+   - 플레이어 위치 동기화
+   - 게임 오브젝트 상태 동기화
 
-3. **Multiplayer Gameplay**
-   - Multiple players visible on screen
-   - Basic interaction between players
+3. **멀티플레이어 게임플레이**
+   - 화면에 여러 플레이어 표시
+   - 플레이어 간 기본 상호작용
 
-4. **Game Lobby**
-   - Player can host/join games
-   - Display connected players
+4. **게임 로비**
+   - 플레이어가 게임 호스트/참가 가능
+   - 연결된 플레이어 표시
 
-### Nice-to-Have Features
-1. **Advanced Sync**
-   - Client-side prediction
-   - Lag compensation
+### 추가 기능 (선택)
+1. **고급 동기화**
+   - 클라이언트 측 예측
+   - 지연 보상
 
-2. **Enhanced Gameplay**
-   - Cooperative mechanics (shared lives, combined score)
-   - Competitive mechanics (race to finish, score competition)
+2. **향상된 게임플레이**
+   - 협력 메커니즘 (공유 목숨, 합산 점수)
+   - 경쟁 메커니즘 (결승선 경주, 점수 경쟁)
 
-3. **Polish**
-   - Player customization (colors, names)
-   - Chat system
-   - Reconnection handling
-
----
-
-## Current Progress
-
-### Completed
-- [x] Repository setup
-- [x] Git initialization and GitHub push
-- [x] Development documentation structure
-
-### In Progress
-- [ ] Codebase analysis
-- [ ] Network architecture design
-
-### Blocked
-- None
+3. **개선사항**
+   - 플레이어 커스터마이징 (색상, 이름)
+   - 채팅 시스템
+   - 재연결 처리
 
 ---
 
-## Technical Notes
+## 현재 진행 상황
 
-### Network Protocol Design (Draft)
+### 완료
+- [x] 저장소 설정
+- [x] Git 초기화 및 GitHub 푸시
+- [x] 개발 문서 구조
 
-**Message Types**:
+### 진행 중
+- [ ] 코드베이스 분석
+- [ ] 네트워크 아키텍처 설계
+
+### 블로커
+- 없음
+
+---
+
+## 기술 노트
+
+### 네트워크 프로토콜 설계 (초안)
+
+**메시지 타입**:
 ```java
-// Client → Server
-CONNECT(playerId, playerName)
-INPUT(playerId, keyCode, pressed)
-DISCONNECT(playerId)
+// 클라이언트 → 서버
+CONNECT(playerId, playerName)       // 연결
+INPUT(playerId, keyCode, pressed)   // 입력
+DISCONNECT(playerId)                // 연결 해제
 
-// Server → Client
-GAME_STATE(players[], enemies[], items[])
-PLAYER_JOINED(playerId, playerName)
-PLAYER_LEFT(playerId)
-GAME_STARTED()
-GAME_ENDED(winner)
+// 서버 → 클라이언트
+GAME_STATE(players[], enemies[], items[])  // 게임 상태
+PLAYER_JOINED(playerId, playerName)        // 플레이어 참가
+PLAYER_LEFT(playerId)                      // 플레이어 퇴장
+GAME_STARTED()                             // 게임 시작
+GAME_ENDED(winner)                         // 게임 종료
 ```
 
-**Message Format** (TBD):
-- Option 1: JSON strings
-- Option 2: Binary protocol (custom serialization)
-- Option 3: Java Serialization
+**메시지 포맷** (미정):
+- Option 1: JSON 문자열
+- Option 2: 바이너리 프로토콜 (커스텀 직렬화)
+- Option 3: Java 직렬화
 
-### Performance Considerations
-- Target tick rate: 60 FPS (client rendering)
-- Network update rate: 20-30 Hz (server → client)
-- Input send rate: On input change (client → server)
+### 성능 고려사항
+- 목표 틱 레이트: 60 FPS (클라이언트 렌더링)
+- 네트워크 업데이트 레이트: 20-30 Hz (서버 → 클라이언트)
+- 입력 전송 레이트: 입력 변경 시마다 (클라이언트 → 서버)
 
-### Known Issues
-- None yet
-
----
-
-## Resources
-
-### Documentation
-- Original Game Repository: https://github.com/ahmetcandiroglu/Super-Mario-Bros
-- Course Materials: Network Programming lecture notes
-- Java Socket Programming: Official Oracle documentation
-
-### References
-- Network game development patterns
-- Client-server architecture best practices
-- Java networking tutorials
+### 알려진 이슈
+- 아직 없음
 
 ---
 
-## Questions & Decisions Log
+## 참고 자료
 
-### Open Questions
-1. Should we use TCP, UDP, or hybrid approach?
-2. How many players should we support? (2-4?)
-3. What multiplayer mode? (cooperative vs competitive vs both?)
-4. How to handle different network conditions?
+### 문서
+- 원본 게임 저장소: https://github.com/ahmetcandiroglu/Super-Mario-Bros
+- 수업 자료: 네트워크프로그래밍 강의 노트
+- Java 소켓 프로그래밍: Oracle 공식 문서
 
-### Decisions Made
-- Project repository: https://github.com/kimstitute/Network-Super-Mario-Bros
-- Development approach: Extend existing codebase
-- Documentation: Markdown-based in `.claude/` directory
+### 참고자료
+- 네트워크 게임 개발 패턴
+- 클라이언트-서버 아키텍처 베스트 프랙티스
+- Java 네트워킹 튜토리얼
 
 ---
 
-## Daily Progress Log
+## 질문 및 결정 사항 로그
+
+### 미결정 사항
+1. TCP, UDP, 아니면 하이브리드 방식을 사용할 것인가?
+2. 몇 명의 플레이어를 지원할 것인가? (2-4명?)
+3. 어떤 멀티플레이어 모드? (협력 vs 경쟁 vs 둘 다?)
+4. 다양한 네트워크 환경을 어떻게 처리할 것인가?
+
+### 결정된 사항
+- 프로젝트 저장소: https://github.com/kimstitute/Network-Super-Mario-Bros
+- 개발 방식: 기존 코드베이스 확장
+- 문서화: `.claude/` 디렉토리의 Markdown 기반
+
+---
+
+## 일일 진행 로그
 
 ### 2024-12-14
-- **Completed**:
-  - Created new GitHub repository
-  - Initialized Git and pushed initial commit
-  - Set up `.claude/` directory structure
-  - Created development plan document (CLAUDE.md)
-  - Configured project settings
+- **완료**:
+  - 새 GitHub 저장소 생성
+  - Git 초기화 및 초기 커밋 푸시
+  - `.claude/` 디렉토리 구조 설정
+  - 개발 계획 문서(CLAUDE.md) 작성
+  - 프로젝트 설정 구성
 
-- **Next Steps**:
-  - Analyze existing codebase architecture
-  - Design network communication protocol
-  - Start implementation planning
+- **다음 단계**:
+  - 기존 코드베이스 아키텍처 분석
+  - 네트워크 통신 프로토콜 설계
+  - 구현 계획 시작
 
 ---
 
-**Last Updated**: 2024-12-14
-**Status**: Planning Phase
-**Next Milestone**: Complete architecture design
+**마지막 업데이트**: 2024-12-14
+**상태**: 계획 단계
+**다음 마일스톤**: 아키텍처 설계 완료
