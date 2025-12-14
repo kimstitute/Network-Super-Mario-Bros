@@ -5,3 +5,7 @@
 .idea
 /out/
 src/META-INF/MANIFEST.MF
+
+# Claude Code personal settings only (share project settings)
+.claude/settings.local.json
+.claude/CLAUDE.local.md 
