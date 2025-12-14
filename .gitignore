@@ -1,4 +1,5 @@
 /bin/
+*.class
 
 .classpath
 *.project
@@ -6,6 +7,17 @@
 /out/
 src/META-INF/MANIFEST.MF
 
+manager/
+model/
+network/
+ranking/
+view/
+
+*.dat
+rankings.dat
+src/rankings.dat
+
 # Claude Code personal settings only (share project settings)
-.claude/settings.local.json
-.claude/CLAUDE.local.md 
+/.claude/*
+/class_ppt/ 
+/references/ 

@@ -319,14 +319,38 @@ GAME_ENDED(winner)                         // 게임 종료
   - `.claude/` 디렉토리 구조 설정
   - 개발 계획 문서(CLAUDE.md) 작성
   - 프로젝트 설정 구성
+  - C언어 슈퍼마리오 코드 분석 및 Java와의 구현 방식 비교
+  - 기존 Java 프로젝트 구조 심층 분석 (GameEngine, MapManager, Mario)
+  - 최소 수정 멀티플레이어 구현 계획 작성 (IMPLEMENTATION_PLAN.md)
+  - **Phase 1**: 네트워크 프로토콜 구현 완료
+    - MessageType, GameStateMessage, InputMessage 등 프로토콜 클래스 구현
+    - GameServer, GameClient, ClientHandler 구현
+    - 기본 서버-클라이언트 연결 테스트 완료
+  - **Phase 2**: 게임 상태 동기화 구현 완료
+    - MapManager에 다중 플레이어 지원 (MAX_PLAYERS = 4)
+    - GameStateMessage 기반 상태 직렬화/역직렬화
+    - GameEngine의 게임 루프에 네트워크 동기화 통합
+    - 각 클라이언트의 카메라가 자신의 플레이어 추적
+  - **Phase 3**: 네트워크 UI 구현 완료
+    - 시작 화면에 "서버 시작", "서버 접속" 메뉴 추가
+    - 서버 대기 화면 구현 (접속자 목록 표시)
+    - 클라이언트 접속 화면 구현
+    - 네트워크 모드 시작 로직 통합
+  - **Phase 4**: 통합 및 테스트 준비 완료
+    - 전체 프로젝트 컴파일 성공 (오류 없음)
+    - 네트워크 입력 처리 로직 추가
+    - getClientCount() 메서드 추가
+    - 테스트 가이드 문서 작성 (TEST_GUIDE.md)
+    - 실행 배치 파일 작성 (compile.bat, run_game.bat, run_server.bat, run_client.bat)
 
 - **다음 단계**:
-  - 기존 코드베이스 아키텍처 분석
-  - 네트워크 통신 프로토콜 설계
-  - 구현 계획 시작
+  - 사용자 테스트 및 피드백
+  - 발견된 버그 수정
+  - 성능 최적화
+  - 최종 보고서 및 시연 동영상 준비
 
 ---
 
 **마지막 업데이트**: 2024-12-14
-**상태**: 계획 단계
-**다음 마일스톤**: 아키텍처 설계 완료
+**상태**: Phase 4 완료 - 통합 테스트 준비
+**다음 마일스톤**: 사용자 테스트 및 최종 제출물 준비
