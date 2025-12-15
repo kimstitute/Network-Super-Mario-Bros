@@ -21,15 +21,17 @@ public class SurpriseBrick extends Brick{
 
     @Override
     public Prize reveal(GameEngine engine){
-        BufferedImage newStyle = engine.getImageLoader().loadImage("/sprite.png");
-        newStyle = engine.getImageLoader().getSubImage(newStyle, 1, 2, 48, 48);
+        if (engine != null) {
+            BufferedImage newStyle = engine.getImageLoader().loadImage("/sprite.png");
+            newStyle = engine.getImageLoader().getSubImage(newStyle, 1, 2, 48, 48);
+            setStyle(newStyle);
+        }
 
         if(prize != null){
             prize.reveal();
         }
 
         setEmpty(true);
-        setStyle(newStyle);
 
         Prize toReturn = this.prize;
         this.prize = null;

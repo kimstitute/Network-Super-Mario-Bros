@@ -1,5 +1,9 @@
 package model;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Iterator;
 import model.brick.Brick;
 import model.brick.OrdinaryBrick;
 import model.enemy.Enemy;
@@ -9,32 +13,26 @@ import model.prize.BoostItem;
 import model.prize.Coin;
 import model.prize.Prize;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Iterator;
-
+// 게임 맵: 모든 게임 오브젝트(마리오, 적, 블록, 아이템)와 시간 관리
 public class Map {
 
-    private double remainingTime;
+    private double remainingTime; // 남은 시간 (초)
     private Mario mario;
     private ArrayList<Brick> bricks = new ArrayList<>();
     private ArrayList<Enemy> enemies = new ArrayList<>();
     private ArrayList<Brick> groundBricks = new ArrayList<>();
-    private ArrayList<Prize> revealedPrizes = new ArrayList<>();
-    private ArrayList<Brick> revealedBricks = new ArrayList<>();
+    private ArrayList<Prize> revealedPrizes = new ArrayList<>(); // 물음표 블록에서 나온 아이템
+    private ArrayList<Brick> revealedBricks = new ArrayList<>(); // 부서지는 블록
     private ArrayList<Fireball> fireballs = new ArrayList<>();
-    private EndFlag endPoint;
+    private EndFlag endPoint; // 깃발
     private BufferedImage backgroundImage;
-    private double bottomBorder = 720 - 96;
+    private double bottomBorder = 720 - 96; // 화면 하단 경계
     private String path;
-
 
     public Map(double remainingTime, BufferedImage backgroundImage) {
         this.backgroundImage = backgroundImage;
         this.remainingTime = remainingTime;
     }
-
 
     public Mario getMario() {
         return mario;
@@ -58,10 +56,8 @@ public class Map {
 
     public ArrayList<Brick> getAllBricks() {
         ArrayList<Brick> allBricks = new ArrayList<>();
-
         allBricks.addAll(bricks);
         allBricks.addAll(groundBricks);
-
         return allBricks;
     }
 
@@ -77,6 +73,7 @@ public class Map {
         this.enemies.add(enemy);
     }
 
+    // 맵 전체 렌더링: 배경 → 아이템 → 블록 → 적 → 파이어볼 → 마리오 → 깃발
     public void drawMap(Graphics2D g2){
         drawBackground(g2);
         drawPrizes(g2);
@@ -127,15 +124,19 @@ public class Map {
     }
 
     private void drawMario(Graphics2D g2) {
-        mario.draw(g2);
+        if (mario != null) {
+            mario.draw(g2);
+        }
     }
 
+    // 모든 오브젝트의 위치 업데이트
     public void updateLocations() {
         mario.updateLocation();
         for(Enemy enemy : enemies){
             enemy.updateLocation();
         }
 
+        // 코인 애니메이션 업데이트 및 제거
         for(Iterator<Prize> prizeIterator = revealedPrizes.iterator(); prizeIterator.hasNext();){
             Prize prize = prizeIterator.next();
             if(prize instanceof Coin){
@@ -153,6 +154,7 @@ public class Map {
             fireball.updateLocation();
         }
 
+        // 부서지는 블록 애니메이션 업데이트
         for(Iterator<Brick> brickIterator = revealedBricks.iterator(); brickIterator.hasNext();){
             OrdinaryBrick brick = (OrdinaryBrick)brickIterator.next();
             brick.animate();
@@ -209,8 +211,14 @@ public class Map {
         this.path = path;
     }
 
+    // 시간 감소 (음수 방지)
     public void updateTime(double passed){
-        remainingTime = remainingTime - passed;
+        if (remainingTime > 0) {
+            remainingTime = remainingTime - passed;
+            if (remainingTime < 0) {
+                remainingTime = 0;
+            }
+        }
     }
 
     public boolean isTimeOver(){

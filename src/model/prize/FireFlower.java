@@ -19,14 +19,13 @@ public class FireFlower extends BoostItem {
     public void onTouch(Mario mario, GameEngine engine) {
         mario.acquirePoints(getPoint());
 
-        ImageLoader imageLoader = new ImageLoader();
-
-        if(!mario.getMarioForm().isFire()){
+        if(!mario.getMarioForm().isFire() && engine != null){
+            ImageLoader imageLoader = engine.getImageLoader();
             BufferedImage[] leftFrames = imageLoader.getLeftFrames(MarioForm.FIRE);
             BufferedImage[] rightFrames = imageLoader.getRightFrames(MarioForm.FIRE);
 
             Animation animation = new Animation(leftFrames, rightFrames);
-            MarioForm newForm = new MarioForm(animation, true, true);
+            MarioForm newForm = new MarioForm(animation, true, true, imageLoader);
             mario.setMarioForm(newForm);
             mario.setDimension(48, 96);
 

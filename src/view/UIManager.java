@@ -44,9 +44,26 @@ public class UIManager extends JPanel{
     private BufferedImage selectIcon;     // 선택 아이콘
     
     /**
+     * 스프라이트 시트 이미지
+     */
+    private BufferedImage spriteSheet;
+    
+    /**
+     * 클라이언트 렌더링용 맵 배경 이미지
+     */
+    private BufferedImage mapBackgroundImage;
+    private String currentMapName = null;
+    
+    /**
      * 맵 선택 화면을 관리하는 객체
      */
     private MapSelection mapSelection;
+    
+    /**
+     * 플레이어별 애니메이션 객체 캐시
+     */
+    private java.util.Map<Integer, Animation> playerAnimations;
+    
 
     /**
      * UI 관리자 생성자
@@ -67,13 +84,16 @@ public class UIManager extends JPanel{
 
         // 맵 선택 화면 초기화
         mapSelection = new MapSelection();
+        
+        // 애니메이션 캐시 초기화
+        playerAnimations = new java.util.HashMap<>();
 
         // 스프라이트 시트 로드
-        BufferedImage sprite = loader.loadImage("/sprite.png");
+        this.spriteSheet = loader.loadImage("/sprite.png");
         
         // UI 아이콘 이미지들 로드
         this.heartIcon = loader.loadImage("/heart-icon.png");
-        this.coinIcon = loader.getSubImage(sprite, 1, 5, 48, 48);
+        this.coinIcon = loader.getSubImage(spriteSheet, 1, 5, 48, 48);
         this.selectIcon = loader.loadImage("/select-icon.png");
         
         // 각 화면 상태의 배경 이미지 로드
@@ -125,6 +145,9 @@ public class UIManager extends JPanel{
         else if(gameStatus == GameStatus.RANKING_SCREEN){
             drawRankingScreen(g2);                  // 랭킹 화면
         }
+        else if(gameStatus == GameStatus.STAGE_SELECTION){
+            drawStageSelectionScreen(g2);          // 스테이지 선택 화면
+        }
         else if(gameStatus == GameStatus.WAITING_FOR_PLAYERS){
             drawWaitingForPlayersScreen(g2);       // 서버 대기 화면
         }
@@ -133,27 +156,37 @@ public class UIManager extends JPanel{
         }
         else {
             // 게임 플레이 화면
-            Point camLocation = engine.getCameraLocation();
-            g2.translate(-camLocation.x, -camLocation.y);  // 카메라 위치 조정
-            engine.drawMap(g2);                         // 맵과 게임 오브젝트 렌더링
-            
-            // 다른 플레이어들 렌더링 (네트워크 모드)
-            drawOtherPlayers(g2);
-            
-            g2.translate(camLocation.x, camLocation.y);      // 카메라 위치 복원
+            System.out.println("[UI] Drawing game screen");
+            if(engine.getNetworkManager() != null && 
+               engine.getNetworkManager().getNetworkMode() == network.NetworkManager.NetworkMode.CLIENT) {
+                System.out.println("[UI] CLIENT MODE - calling drawGameFromState()");
+                // 클라이언트 모드: 서버에서 받은 GameStateMessage 기반 렌더링
+                drawGameFromState(g2);
+            } else {
+                System.out.println("[UI] SINGLE/SERVER MODE - drawing traditional way");
+                // 싱글플레이어/서버 모드: 기존 방식
+                Point camLocation = engine.getCameraLocation();
+                g2.translate(-camLocation.x, -camLocation.y);  // 카메라 위치 조정
+                engine.drawMap(g2);                         // 맵과 게임 오브젝트 렌더링
+                
+                // 다른 플레이어들 렌더링 (네트워크 모드)
+                drawOtherPlayers(g2);
+                
+                g2.translate(camLocation.x, camLocation.y);      // 카메라 위치 복원
 
-            // HUD 요소들 렌더링
-            drawPoints(g2);                           // 점수 표시
-            drawRemainingLives(g2);                    // 생명 표시
-            drawAcquiredCoins(g2);                     // 코인 표시
-            drawRemainingTime(g2);                     // 시간 표시
+                // HUD 요소들 렌더링
+                drawPoints(g2);                           // 점수 표시
+                drawRemainingLives(g2);                    // 생명 표시
+                drawAcquiredCoins(g2);                     // 코인 표시
+                drawRemainingTime(g2);                     // 시간 표시
 
-            // 게임 중 특수 상태 화면
-            if(gameStatus == GameStatus.PAUSED){
-                drawPauseScreen(g2);                   // 일시정지 화면
-            }
-            else if(gameStatus == GameStatus.MISSION_PASSED){
-                drawVictoryScreen(g2);                 // 승리 화면
+                // 게임 중 특수 상태 화면
+                if(gameStatus == GameStatus.PAUSED){
+                    drawPauseScreen(g2);                   // 일시정지 화면
+                }
+                else if(gameStatus == GameStatus.MISSION_PASSED){
+                    drawVictoryScreen(g2);                 // 승리 화면
+                }
             }
         }
 
@@ -267,21 +300,120 @@ public class UIManager extends JPanel{
     }
 
     private void drawHelpScreen(Graphics2D g2) {
-        g2.drawImage(helpScreenImage, 0, 0, null);
+        g2.setColor(Color.BLACK);
+        g2.fillRect(0, 0, getWidth(), getHeight());
+        
+        g2.setFont(gameFont.deriveFont(50f));
+        g2.setColor(Color.YELLOW);
+        String title = "HOW TO PLAY";
+        int titleWidth = g2.getFontMetrics().stringWidth(title);
+        g2.drawString(title, (getWidth() - titleWidth) / 2, 80);
+        
+        g2.setFont(gameFont.deriveFont(24f));
+        g2.setColor(Color.WHITE);
+        
+        String[] instructions = {
+            "",
+            "MOVEMENT:",
+            "  LEFT/RIGHT ARROW - Move Mario",
+            "  UP ARROW - Jump",
+            "  SPACE - Fire (when powered up)",
+            "",
+            "MULTIPLAYER:",
+            "  CREATE ROOM - Start a new game",
+            "  SELECT STAGE - Choose Stage 1 or 2",
+            "  READY - Signal you're ready to start",
+            "  JOIN ROOM - Join existing game",
+            "",
+            "OBJECTIVE:",
+            "  Reach the flag at the end",
+            "  Collect coins and defeat enemies",
+            "  Compete with other players!",
+            "",
+            ""
+        };
+        
+        int y = 150;
+        for (String line : instructions) {
+            g2.drawString(line, 100, y);
+            y += 35;
+        }
+        
+        g2.setFont(gameFont.deriveFont(20f));
+        g2.setColor(Color.GRAY);
+        String backMsg = "Press ESC to return";
+        int backWidth = g2.getFontMetrics().stringWidth(backMsg);
+        g2.drawString(backMsg, (getWidth() - backWidth) / 2, getHeight() - 40);
     }
 
     private void drawAboutScreen(Graphics2D g2) {
-        g2.drawImage(aboutScreenImage, 0, 0, null);
+        g2.setColor(Color.BLACK);
+        g2.fillRect(0, 0, getWidth(), getHeight());
+        
+        g2.setFont(gameFont.deriveFont(50f));
+        g2.setColor(Color.YELLOW);
+        String title = "ABOUT";
+        int titleWidth = g2.getFontMetrics().stringWidth(title);
+        g2.drawString(title, (getWidth() - titleWidth) / 2, 100);
+        
+        g2.setFont(gameFont.deriveFont(30f));
+        g2.setColor(Color.WHITE);
+        String gameTitle = "Super Mario Bros.";
+        int gameTitleWidth = g2.getFontMetrics().stringWidth(gameTitle);
+        g2.drawString(gameTitle, (getWidth() - gameTitleWidth) / 2, 180);
+        
+        g2.setFont(gameFont.deriveFont(20f));
+        g2.setColor(new Color(150, 150, 150));
+        String subtitle = "Multiplayer Network Edition";
+        int subtitleWidth = g2.getFontMetrics().stringWidth(subtitle);
+        g2.drawString(subtitle, (getWidth() - subtitleWidth) / 2, 220);
+        
+        g2.setFont(gameFont.deriveFont(24f));
+        g2.setColor(Color.WHITE);
+        
+        String[] aboutText = {
+            "",
+            "Developed by:",
+            "Kim Minsang",
+            "",
+            "Hansung University",
+            "Computer Science / Artificial Intelligence",
+            "3rd Year",
+            "",
+            "Network Programming Course",
+            "Fall 2025",
+            "",
+            ""
+        };
+        
+        int y = 280;
+        for (String line : aboutText) {
+            int lineWidth = g2.getFontMetrics().stringWidth(line);
+            g2.drawString(line, (getWidth() - lineWidth) / 2, y);
+            y += 35;
+        }
+        
+        g2.setFont(gameFont.deriveFont(20f));
+        g2.setColor(Color.GRAY);
+        String backMsg = "Press ESC to return";
+        int backWidth = g2.getFontMetrics().stringWidth(backMsg);
+        g2.drawString(backMsg, (getWidth() - backWidth) / 2, getHeight() - 40);
     }
 
     private void drawGameOverScreen(Graphics2D g2) {
-        g2.drawImage(gameOverScreen, 0, 0, null);
-        g2.setFont(gameFont.deriveFont(50f));
-        g2.setColor(new Color(130, 48, 48));
-        String acquiredPoints = "Score: " + engine.getScore();
-        int stringLength = g2.getFontMetrics().stringWidth(acquiredPoints);
-        int stringHeight = g2.getFontMetrics().getHeight();
-        g2.drawString(acquiredPoints, (getWidth()-stringLength)/2, getHeight()-stringHeight*2);
+        g2.setColor(Color.BLACK);
+        g2.fillRect(0, 0, getWidth(), getHeight());
+        
+        g2.setFont(gameFont.deriveFont(80f));
+        g2.setColor(Color.WHITE);
+        String gameOverText = "GAME OVER";
+        int textWidth = g2.getFontMetrics().stringWidth(gameOverText);
+        g2.drawString(gameOverText, (getWidth() - textWidth) / 2, getHeight() / 2);
+        
+        g2.setFont(gameFont.deriveFont(30f));
+        String pressKeyText = "Press any key to exit";
+        int pressKeyWidth = g2.getFontMetrics().stringWidth(pressKeyText);
+        g2.drawString(pressKeyText, (getWidth() - pressKeyWidth) / 2, getHeight() / 2 + 80);
     }
 
     private void drawPauseScreen(Graphics2D g2) {
@@ -320,26 +452,31 @@ public class UIManager extends JPanel{
     private void drawStartScreen(Graphics2D g2){
         int row = engine.getStartScreenSelection().getLineNumber();
         g2.drawImage(startScreenImage, 0, 0, null);
-        
+
+        g2.setFont(gameFont.deriveFont(16f));
+        g2.setColor(new Color(200, 200, 200));
+        String credit = "Hansung Univ CS/AI Kim Minsang";
+        int creditWidth = g2.getFontMetrics().stringWidth(credit);
+        g2.drawString(credit, (getWidth() - creditWidth) / 2, 390);
+
         g2.setFont(gameFont.deriveFont(30f));
         g2.setColor(Color.WHITE);
-        
+
         String[] menuItems = {
-            "SINGLE PLAYER",
             "CREATE ROOM",
             "JOIN ROOM",
             "HOW TO PLAY",
             "ABOUT"
         };
-        
+
         int startY = 440;
         int lineHeight = 70;
-        
+
         for (int i = 0; i < menuItems.length; i++) {
             int y = startY + i * lineHeight;
             g2.drawString(menuItems[i], 450, y + 35);
         }
-        
+
         g2.drawImage(selectIcon, 375, row * lineHeight + startY, null);
     }
 
@@ -365,7 +502,7 @@ public class UIManager extends JPanel{
     }
 
     public Point getMousePosition() {
-        return getMousePosition();
+        return super.getMousePosition();
     }
     
     /**
@@ -385,8 +522,9 @@ public class UIManager extends JPanel{
         g2.drawString(title, (getWidth() - titleWidth) / 2, 100);
 
         boolean isHost = engine.isRoomHost();
-        int playerCount = 1;
-        
+        boolean isReady = engine.isPlayerReady();
+        int playerCount = engine.getRoomPlayerCount();
+
         g2.setFont(gameFont.deriveFont(35f));
         g2.setColor(Color.CYAN);
         String playerInfo = String.format("Players: %d / 4", playerCount);
@@ -405,6 +543,25 @@ public class UIManager extends JPanel{
             int roleInfoWidth = g2.getFontMetrics().stringWidth(roleInfo);
             g2.drawString(roleInfo, (getWidth() - roleInfoWidth) / 2, 240);
         }
+        
+        g2.setFont(gameFont.deriveFont(30f));
+        if (isReady) {
+            g2.setColor(Color.GREEN);
+            String readyText = "READY!";
+            int readyWidth = g2.getFontMetrics().stringWidth(readyText);
+            g2.drawString(readyText, (getWidth() - readyWidth) / 2, 320);
+        } else {
+            g2.setColor(Color.RED);
+            String notReadyText = "NOT READY";
+            int notReadyWidth = g2.getFontMetrics().stringWidth(notReadyText);
+            g2.drawString(notReadyText, (getWidth() - notReadyWidth) / 2, 320);
+        }
+        
+        g2.setFont(gameFont.deriveFont(20f));
+        g2.setColor(Color.GRAY);
+        String instruction = "Press SPACE to toggle READY";
+        int instructionWidth = g2.getFontMetrics().stringWidth(instruction);
+        g2.drawString(instruction, (getWidth() - instructionWidth) / 2, 380);
 
         g2.setFont(gameFont.deriveFont(22f));
         g2.setColor(Color.LIGHT_GRAY);
@@ -450,6 +607,62 @@ public class UIManager extends JPanel{
         String backMsg = "ESC to return to menu";
         int backWidth = g2.getFontMetrics().stringWidth(backMsg);
         g2.drawString(backMsg, (getWidth() - backWidth) / 2, getHeight() - 50);
+    }
+    
+    /**
+     * 스테이지 선택 화면을 그리는 메서드
+     * Stage 1 또는 Stage 2를 선택
+     *
+     * @param g2 그래픽스 컨텍스트 객체
+     */
+    private void drawStageSelectionScreen(Graphics2D g2) {
+        g2.setColor(Color.BLACK);
+        g2.fillRect(0, 0, getWidth(), getHeight());
+        
+        g2.setFont(gameFont.deriveFont(50f));
+        g2.setColor(Color.YELLOW);
+        String title = "SELECT STAGE";
+        int titleWidth = g2.getFontMetrics().stringWidth(title);
+        g2.drawString(title, (getWidth() - titleWidth) / 2, 100);
+        
+        int selectedStage = engine.getSelectedStage();
+        
+        g2.setFont(gameFont.deriveFont(40f));
+        
+        String[] stages = {"STAGE 1", "STAGE 2"};
+        int startY = 250;
+        
+        for (int i = 0; i < stages.length; i++) {
+            if (i == selectedStage) {
+                g2.setColor(Color.GREEN);
+            } else {
+                g2.setColor(Color.WHITE);
+            }
+            
+            String stageName = stages[i];
+            int stageWidth = g2.getFontMetrics().stringWidth(stageName);
+            g2.drawString(stageName, (getWidth() - stageWidth) / 2, startY + i * 80);
+            
+            if (i == selectedStage) {
+                int iconY = startY + i * 80 - selectIcon.getHeight() / 2 - 10;
+                g2.drawImage(selectIcon, (getWidth() - stageWidth) / 2 - 60, iconY, null);
+            }
+        }
+        
+        g2.setFont(gameFont.deriveFont(20f));
+        g2.setColor(Color.GRAY);
+        
+        String[] instructions = {
+            "Use ARROW KEYS to select",
+            "Press SPACE to confirm",
+            "Press ESC to return"
+        };
+        
+        int instructionY = 500;
+        for (int i = 0; i < instructions.length; i++) {
+            int textWidth = g2.getFontMetrics().stringWidth(instructions[i]);
+            g2.drawString(instructions[i], (getWidth() - textWidth) / 2, instructionY + i * 30);
+        }
     }
     
     /**
@@ -545,5 +758,268 @@ public class UIManager extends JPanel{
         
         g2.setColor(Color.WHITE);
         g2.drawString(label, x, y);
+    }
+    
+    /**
+     * 서버로부터 받은 GameStateMessage 기반으로 게임 화면을 렌더링
+     *
+     * @param g2 그래픽스 컨텍스트
+     */
+    private void drawGameFromState(Graphics2D g2) {
+        System.out.println("[UI] drawGameFromState() called");
+        network.protocol.GameStateMessage gameState = engine.getNetworkManager().getLatestGameState();
+        System.out.println("[UI] GameState from network: " + (gameState != null ? "EXISTS" : "NULL"));
+        
+        if (gameState == null) {
+            System.out.println("[UI] GameState is null, showing waiting message");
+            g2.setColor(Color.BLACK);
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            g2.setColor(Color.WHITE);
+            g2.setFont(gameFont.deriveFont(30f));
+            String msg = "서버로부터 게임 상태를 받는 중...";
+            int msgWidth = g2.getFontMetrics().stringWidth(msg);
+            g2.drawString(msg, (getWidth() - msgWidth) / 2, getHeight() / 2);
+            return;
+        }
+        
+        int myPlayerId = engine.getNetworkManager().getCurrentPlayerId();
+        network.protocol.GameStateMessage.PlayerState myPlayer = gameState.getPlayer(myPlayerId);
+        
+        if (myPlayer == null) {
+            g2.setColor(Color.BLACK);
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            return;
+        }
+        
+        int cameraX = myPlayer.x - getWidth() / 2;
+        int cameraY = 0;
+        if (cameraX < 0) cameraX = 0;
+        
+        g2.translate(-cameraX, -cameraY);
+        
+        g2.setColor(new Color(92, 148, 252));
+        g2.fillRect(cameraX, cameraY, getWidth(), getHeight());
+        
+        if (gameState.getGameInfo() != null && gameState.getGameInfo().mapName != null) {
+            String backgroundName = gameState.getGameInfo().mapName;
+            if (mapBackgroundImage == null || !backgroundName.equals(currentMapName)) {
+                currentMapName = backgroundName;
+                mapBackgroundImage = engine.getImageLoader().loadImage("/" + backgroundName);
+            }
+        }
+        
+        if (mapBackgroundImage != null) {
+            g2.drawImage(mapBackgroundImage, 0, 0, null);
+        }
+        
+        drawBricksFromState(g2, gameState);
+        drawPlayersFromState(g2, gameState, myPlayerId);
+        drawEnemiesFromState(g2, gameState);
+        drawItemsFromState(g2, gameState);
+        
+        g2.translate(cameraX, cameraY);
+        
+        drawHUDFromState(g2, myPlayer, gameState);
+    }
+    
+    /**
+     * GameStateMessage의 플레이어 정보를 기반으로 플레이어들을 렌더링
+     *
+     * @param g2 그래픽스 컨텍스트
+     * @param gameState 게임 상태 메시지
+     * @param myPlayerId 내 플레이어 ID
+     */
+    private void drawPlayersFromState(Graphics2D g2, network.protocol.GameStateMessage gameState, int myPlayerId) {
+        network.protocol.GameStateMessage.PlayerState[] players = gameState.getPlayers();
+        if (players == null) return;
+
+        ImageLoader loader = engine.getImageLoader();
+
+        for (int i = 1; i < players.length; i++) {
+            network.protocol.GameStateMessage.PlayerState player = players[i];
+            if (player == null) continue;
+
+            Animation animation = playerAnimations.get(i);
+            if (animation == null) {
+                animation = new Animation(loader.getLeftFrames(0), loader.getRightFrames(0));
+                playerAnimations.put(i, animation);
+            }
+
+            BufferedImage playerImage = null;
+            try {
+                boolean movingInX = Math.abs(player.velX) > 0;
+                boolean movingInY = player.jumping || Math.abs(player.velY) > 0;
+                
+                if (movingInY && player.toRight) {
+                    playerImage = animation.getRightFrames()[0];
+                } else if (movingInY) {
+                    playerImage = animation.getLeftFrames()[0];
+                } else if (movingInX) {
+                    playerImage = animation.animate(5, player.toRight);
+                } else {
+                    BufferedImage[] frames = player.toRight ? animation.getRightFrames() : animation.getLeftFrames();
+                    if (frames != null && frames.length > 1) {
+                        playerImage = frames[1];
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("[UI] Error loading player sprite: " + e.getMessage());
+            }
+
+            if (playerImage != null) {
+                g2.drawImage(playerImage, player.x, player.y, null);
+            } else {
+                g2.setColor(i == myPlayerId ? Color.RED : Color.BLUE);
+                g2.fillRect(player.x, player.y, 48, 48);
+            }
+            
+            g2.setFont(gameFont.deriveFont(Font.BOLD, 14f));
+            String playerLabel = "P" + i;
+            int labelWidth = g2.getFontMetrics().stringWidth(playerLabel);
+            int labelX = player.x + (48 - labelWidth) / 2;
+            int labelY = player.y - 5;
+            
+            g2.setColor(Color.BLACK);
+            g2.drawString(playerLabel, labelX - 1, labelY - 1);
+            g2.drawString(playerLabel, labelX + 1, labelY - 1);
+            g2.drawString(playerLabel, labelX - 1, labelY + 1);
+            g2.drawString(playerLabel, labelX + 1, labelY + 1);
+            
+            Color labelColor = (i == myPlayerId) ? Color.YELLOW : Color.WHITE;
+            g2.setColor(labelColor);
+            g2.drawString(playerLabel, labelX, labelY);
+        }
+    }
+    
+    /**
+     * GameStateMessage의 적 정보를 기반으로 적들을 렌더링
+     *
+     * @param g2 그래픽스 컨텍스트
+     * @param gameState 게임 상태 메시지
+     */
+    private void drawEnemiesFromState(Graphics2D g2, network.protocol.GameStateMessage gameState) {
+        network.protocol.GameStateMessage.EnemyState[] enemies = gameState.getEnemies();
+        if (enemies == null) return;
+        
+        ImageLoader loader = engine.getImageLoader();
+        
+        for (network.protocol.GameStateMessage.EnemyState enemy : enemies) {
+            if (enemy == null || !enemy.alive) continue;
+            
+            BufferedImage enemyImage = null;
+            if (enemy.type != null && enemy.type.contains("Goomba")) {
+                int col = enemy.direction ? 5 : 2;
+                enemyImage = loader.getSubImage(spriteSheet, col, 4, 48, 48);
+            } else if (enemy.type != null && enemy.type.contains("KoopaTroopa")) {
+                int col = enemy.direction ? 4 : 1;
+                enemyImage = loader.getSubImage(spriteSheet, col, 3, 48, 64);
+            }
+            
+            if (enemyImage != null) {
+                g2.drawImage(enemyImage, enemy.x, enemy.y, null);
+            } else {
+                g2.setColor(Color.RED);
+                g2.fillRect(enemy.x, enemy.y, 48, 48);
+            }
+        }
+    }
+    
+    /**
+     * GameStateMessage의 아이템 정보를 기반으로 아이템들을 렌더링
+     *
+     * @param g2 그래픽스 컨텍스트
+     * @param gameState 게임 상태 메시지
+     */
+    private void drawItemsFromState(Graphics2D g2, network.protocol.GameStateMessage gameState) {
+        network.protocol.GameStateMessage.ItemState[] items = gameState.getItems();
+        if (items == null) return;
+        
+        ImageLoader loader = engine.getImageLoader();
+        
+        for (network.protocol.GameStateMessage.ItemState item : items) {
+            if (item == null || item.collected) continue;
+            
+            BufferedImage itemImage = loader.getSubImage(spriteSheet, 1, 5, 48, 48);
+            
+            if (itemImage != null) {
+                g2.drawImage(itemImage, item.x, item.y, null);
+            } else {
+                g2.setColor(Color.YELLOW);
+                g2.fillOval(item.x, item.y, 24, 24);
+            }
+        }
+    }
+    
+    /**
+     * GameStateMessage 기반 블록 렌더링
+     *
+     * @param g2 그래픽스 컨텍스트
+     * @param gameState 게임 상태
+     */
+    private void drawBricksFromState(Graphics2D g2, network.protocol.GameStateMessage gameState) {
+        network.protocol.GameStateMessage.BrickState[] bricks = gameState.getBricks();
+        if (bricks == null) {
+            return;
+        }
+        
+        ImageLoader loader = engine.getImageLoader();
+        
+        for (network.protocol.GameStateMessage.BrickState brick : bricks) {
+            if (brick == null) continue;
+            
+            BufferedImage brickImage = null;
+            
+            if ("OrdinaryBrick".equals(brick.type)) {
+                brickImage = loader.getSubImage(spriteSheet, 1, 1, 48, 48);
+            } else if ("SurpriseBrick".equals(brick.type)) {
+                if (brick.empty) {
+                    brickImage = loader.getSubImage(spriteSheet, 2, 3, 48, 48);
+                } else {
+                    brickImage = loader.getSubImage(spriteSheet, 2, 1, 48, 48);
+                }
+            } else if ("GroundBrick".equals(brick.type)) {
+                brickImage = loader.getSubImage(spriteSheet, 2, 2, 48, 48);
+            } else if ("Pipe".equals(brick.type)) {
+                brickImage = loader.getSubImage(spriteSheet, 3, 1, 96, 96);
+            }
+            
+            if (brickImage != null) {
+                g2.drawImage(brickImage, brick.x, brick.y, null);
+            }
+        }
+    }
+    
+    /**
+     * GameStateMessage 기반 HUD 렌더링
+     *
+     * @param g2 그래픽스 컨텍스트
+     * @param player 플레이어 상태
+     * @param gameState 게임 상태
+     */
+    private void drawHUDFromState(Graphics2D g2, network.protocol.GameStateMessage.PlayerState player,
+                                   network.protocol.GameStateMessage gameState) {
+        g2.setFont(gameFont.deriveFont(25f));
+        g2.setColor(Color.WHITE);
+        
+        // 점수 표시 (중앙 좌측)
+        g2.drawString("POINTS: " + player.points, 300, 50);
+        
+        // 목숨 표시 (좌측 상단)
+        if (heartIcon != null) {
+            g2.drawImage(heartIcon, 40, 30, 32, 32, null);
+        }
+        g2.drawString("x " + player.lives, 80, 55);
+        
+        // 코인 표시 (목숨 아래)
+        if (coinIcon != null) {
+            g2.drawImage(coinIcon, 40, 70, 24, 24, null);
+        }
+        g2.drawString("x " + player.coins, 80, 90);
+        
+        // 시간 표시 (우측 상단)
+        network.protocol.GameStateMessage.GameInfo info = gameState.getGameInfo();
+        if (info != null) {
+            g2.drawString("TIME: " + info.remainingTime, 750, 50);
+        }
     }
 }

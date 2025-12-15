@@ -16,48 +16,48 @@ import model.prize.Prize;
 import network.protocol.GameStateMessage;
 import view.ImageLoader;
 
-/**
- * 게임 맵을 관리하는 클래스
- * 맵 생성, 오브젝트 관리, 충돌 감지, 게임 상태 업데이트를 담당
- *
- * @author 네트워크프로그래밍 팀
- * @version 1.0
- * @since 2024-12-14
- */
+// 맵 관리자: 맵 생성, 충돌 감지, 플레이어 관리, 게임 상태 직렬화
 public class MapManager {
     
-    /** 최대 플레이어 수 */
     public static final int MAX_PLAYERS = 4;
 
-    /** 현재 로드된 게임 맵 객체 */
     private Map map;
-    
-    /** 
-     * 다중 플레이어 지원을 위한 Mario 배열
-     * players[0]: 사용 안 함
-     * players[1~MAX_PLAYERS]: 플레이어 1~MAX_PLAYERS
-     */
-    private Mario[] players = new Mario[MAX_PLAYERS + 1];
+    private Mario[] players = new Mario[MAX_PLAYERS + 1]; // players[0]=사용 안함, players[1~4]=플레이어
+    private ImageLoader imageLoader;
 
-    /** MapManager 생성자 */
     public MapManager() {}
 
+    // 모든 플레이어와 맵 오브젝트의 위치 업데이트
     public void updateLocations() {
         if (map == null)
             return;
 
+        for (int i = 1; i <= MAX_PLAYERS; i++) {
+            if (players[i] != null) {
+                players[i].updateLocation();
+                players[i].updateDamageInvincibility(0.016); // 60Hz 기준
+            }
+        }
+        
         map.updateLocations();
     }
 
-    public void resetCurrentMap(GameEngine engine) {
-        Mario mario = getMario();
+    // 플레이어 리스폰 (생명이 0이면 클라이언트가 게임오버 처리)
+    public void respawnPlayer(Mario mario) {
+        System.out.println("[MapManager] respawnPlayer called - Lives: " + mario.getRemainingLives());
+        
+        if (mario.getRemainingLives() <= 0) {
+            System.out.println("[MapManager] Player out of lives - will be handled by client");
+            return;
+        }
+        
+        System.out.println("[MapManager] Respawning player at starting position");
         mario.resetLocation();
-        engine.resetCamera();
-        createMap(engine.getImageLoader(), map.getPath());
-        map.setMario(mario);
     }
 
+    // MapCreator로 맵 파일을 로드하고 생성
     public boolean createMap(ImageLoader loader, String path) {
+        this.imageLoader = loader;
         MapCreator mapCreator = new MapCreator(loader);
         map = mapCreator.createMap("/maps/" + path, 400);
 
@@ -75,20 +75,41 @@ public class MapManager {
         return players[1];
     }
     
+    // playerId에 해당하는 플레이어 반환 (없으면 템플릿으로 생성)
     public Mario getPlayer(int playerId) {
         if (playerId < 1 || playerId > MAX_PLAYERS) {
             return null;
         }
         if (players[playerId] == null && map != null) {
-            players[playerId] = map.getMario();
+            Mario template = map.getMario();
+            if (template != null && imageLoader != null) {
+                players[playerId] = new Mario(template.getX(), template.getY(), imageLoader);
+                System.out.println("[MapManager] Created new Mario for player " + playerId + 
+                                   " at (" + template.getX() + ", " + template.getY() + ")");
+            }
         }
         return players[playerId];
+    }
+    
+    public void setPlayer(int playerId, Mario player) {
+        if (playerId >= 1 && playerId <= MAX_PLAYERS) {
+            players[playerId] = player;
+            System.out.println("[MapManager] Set player " + playerId + " (Mario object assigned)");
+        }
+    }
+    
+    public void removePlayer(int playerId) {
+        if (playerId >= 1 && playerId <= MAX_PLAYERS) {
+            players[playerId] = null;
+            System.out.println("[MapManager] Removed player " + playerId);
+        }
     }
     
     public Mario[] getAllPlayers() {
         return players;
     }
     
+    // 특정 플레이어를 제외한 나머지 플레이어 목록 반환
     public ArrayList<Mario> getOtherPlayers(int myPlayerId) {
         ArrayList<Mario> others = new ArrayList<>();
         for (int i = 1; i <= MAX_PLAYERS; i++) {
@@ -99,6 +120,7 @@ public class MapManager {
         return others;
     }
 
+    // 파이어볼 발사 (Fire Mario만 가능)
     public void fire(GameEngine engine) {
         Mario mario = getMario();
         if (mario == null) {
@@ -132,6 +154,7 @@ public class MapManager {
         map.drawMap(g2);
     }
 
+    // 깃발 도달 시 높이에 따른 보너스 점수 계산
     public int passMission() {
         if(getMario().getX() >= map.getEndPoint().getX() && !map.getEndPoint().isTouched()){
             map.getEndPoint().setTouched(true);
@@ -142,26 +165,33 @@ public class MapManager {
             return -1;
     }
 
+    // 깃발 지나서 스테이지 종료 체크
     public boolean endLevel(){
         return getMario().getX() >= map.getEndPoint().getX() + 320;
     }
 
+    // 모든 충돌 검사 (서버에서 60Hz로 실행)
     public void checkCollisions(GameEngine engine) {
         if (map == null) {
             return;
         }
 
-        checkBottomCollisions(engine);
-        checkTopCollisions(engine);
-        checkMarioHorizontalCollision(engine);
+        for (int i = 1; i <= MAX_PLAYERS; i++) {
+            if (players[i] != null) {
+                checkBottomCollisions(players[i], engine);
+                checkTopCollisions(players[i], engine);
+                checkMarioHorizontalCollision(players[i], engine);
+                checkPrizeContact(players[i], engine);
+            }
+        }
+        
         checkEnemyCollisions();
         checkPrizeCollision();
-        checkPrizeContact(engine);
         checkFireballContact();
     }
 
-    private void checkBottomCollisions(GameEngine engine) {
-        Mario mario = getMario();
+    // 하단 충돌: 블록 위 착지, 적 밟기
+    private void checkBottomCollisions(Mario mario, GameEngine engine) {
         ArrayList<Brick> bricks = map.getAllBricks();
         ArrayList<Enemy> enemies = map.getEnemies();
         ArrayList<GameObject> toBeRemoved = new ArrayList<>();
@@ -183,9 +213,13 @@ public class MapManager {
         for (Enemy enemy : enemies) {
             Rectangle enemyTopBounds = enemy.getTopBounds();
             if (marioBottomBounds.intersects(enemyTopBounds)) {
-                mario.acquirePoints(100);
-                toBeRemoved.add(enemy);
-                engine.playStomp();
+                if (!mario.isDamageInvincible()) {
+                    mario.acquirePoints(100);
+                    toBeRemoved.add(enemy);
+                    if (engine != null) {
+                        engine.playStomp();
+                    }
+                }
             }
         }
 
@@ -198,8 +232,8 @@ public class MapManager {
         removeObjects(toBeRemoved);
     }
 
-    private void checkTopCollisions(GameEngine engine) {
-        Mario mario = getMario();
+    // 상단 충돌: 블록 밑에서 부딪혀서 아이템 나오게 하기
+    private void checkTopCollisions(Mario mario, GameEngine engine) {
         ArrayList<Brick> bricks = map.getAllBricks();
 
         Rectangle marioTopBounds = mario.getTopBounds();
@@ -215,8 +249,8 @@ public class MapManager {
         }
     }
 
-    private void checkMarioHorizontalCollision(GameEngine engine){
-        Mario mario = getMario();
+    // 수평 충돌: 블록/적과 좌우 충돌, 적과 충돌 시 폼 변환 또는 사망
+    private void checkMarioHorizontalCollision(Mario mario, GameEngine engine){
         ArrayList<Brick> bricks = map.getAllBricks();
         ArrayList<Enemy> enemies = map.getEnemies();
         ArrayList<GameObject> toBeRemoved = new ArrayList<>();
@@ -240,23 +274,24 @@ public class MapManager {
         for(Enemy enemy : enemies){
             Rectangle enemyBounds = !toRight ? enemy.getRightBounds() : enemy.getLeftBounds();
             if (marioBounds.intersects(enemyBounds)) {
-                marioDies = mario.onTouchEnemy(engine);
-                toBeRemoved.add(enemy);
+                if (!mario.isDamageInvincible()) {
+                    marioDies = mario.onTouchEnemy(engine);
+                }
             }
         }
         removeObjects(toBeRemoved);
 
-
-        if (mario.getX() <= engine.getCameraLocation().getX() && mario.getVelX() < 0) {
+        if (engine != null && mario.getX() <= engine.getCameraLocation().getX() && mario.getVelX() < 0) {
             mario.setVelX(0);
             mario.setX(engine.getCameraLocation().getX());
         }
 
         if(marioDies) {
-            resetCurrentMap(engine);
+            respawnPlayer(mario);
         }
     }
 
+    // 적 충돌: 블록과 충돌 시 방향 전환, 떨어질 때 중력 적용
     private void checkEnemyCollisions() {
         ArrayList<Brick> bricks = map.getAllBricks();
         ArrayList<Enemy> enemies = map.getEnemies();
@@ -300,6 +335,7 @@ public class MapManager {
         }
     }
 
+    // 아이템 충돌: BoostItem이 블록과 충돌하여 방향 전환, 바닥 착지
     private void checkPrizeCollision() {
         ArrayList<Prize> prizes = map.getRevealedPrizes();
         ArrayList<Brick> bricks = map.getAllBricks();
@@ -354,24 +390,26 @@ public class MapManager {
         }
     }
 
-    private void checkPrizeContact(GameEngine engine) {
+    // 아이템 획득: 마리오와 아이템 충돌 시 효과 적용
+    private void checkPrizeContact(Mario mario, GameEngine engine) {
         ArrayList<Prize> prizes = map.getRevealedPrizes();
         ArrayList<GameObject> toBeRemoved = new ArrayList<>();
 
-        Rectangle marioBounds = getMario().getBounds();
+        Rectangle marioBounds = mario.getBounds();
         for(Prize prize : prizes){
             Rectangle prizeBounds = prize.getBounds();
             if (prizeBounds.intersects(marioBounds)) {
-                prize.onTouch(getMario(), engine);
+                prize.onTouch(mario, engine);
                 toBeRemoved.add((GameObject) prize);
             } else if(prize instanceof Coin){
-                prize.onTouch(getMario(), engine);
+                prize.onTouch(mario, engine);
             }
         }
 
         removeObjects(toBeRemoved);
     }
 
+    // 파이어볼 충돌: 적이나 블록에 닿으면 파이어볼 제거
     private void checkFireballContact() {
         ArrayList<Fireball> fireballs = map.getFireballs();
         ArrayList<Enemy> enemies = map.getEnemies();
@@ -401,6 +439,7 @@ public class MapManager {
         removeObjects(toBeRemoved);
     }
 
+    // 오브젝트 제거 (적, 파이어볼, 아이템)
     private void removeObjects(ArrayList<GameObject> list){
         if(list == null)
             return;
@@ -422,6 +461,7 @@ public class MapManager {
         map.addRevealedBrick(ordinaryBrick);
     }
 
+    // 남은 시간 1초 감소 (서버에서 1Hz로 호출)
     public void updateTime(){
         if(map != null)
             map.updateTime(1);
@@ -431,14 +471,17 @@ public class MapManager {
         return (int)map.getRemainingTime();
     }
     
+    // 현재 게임 상태를 GameStateMessage로 직렬화 (서버→클라이언트 전송용)
     public GameStateMessage collectGameState(Camera camera) {
         if (map == null) {
             return null;
         }
-        
+
         GameStateMessage.PlayerState[] playerStates = new GameStateMessage.PlayerState[MAX_PLAYERS + 1];
         for (int i = 1; i <= MAX_PLAYERS; i++) {
-            playerStates[i] = createPlayerState(getPlayer(i));
+            if (players[i] != null) {
+                playerStates[i] = createPlayerState(players[i]);
+            }
         }
         
         ArrayList<Enemy> enemies = map.getEnemies();
@@ -477,15 +520,32 @@ public class MapManager {
             fs.direction = fireball.getVelX() > 0;
             fireballStates[i] = fs;
         }
-        
+
+        ArrayList<Brick> bricks = map.getAllBricks();
+        GameStateMessage.BrickState[] brickStates = new GameStateMessage.BrickState[bricks.size()];
+        for (int i = 0; i < bricks.size(); i++) {
+            Brick brick = bricks.get(i);
+            GameStateMessage.BrickState bs = new GameStateMessage.BrickState();
+            bs.x = (int) brick.getX();
+            bs.y = (int) brick.getY();
+            bs.type = brick.getClass().getSimpleName();
+            bs.empty = brick.isEmpty();
+            bs.breaking = false;
+            if (brick instanceof OrdinaryBrick) {
+                bs.breaking = ((OrdinaryBrick) brick).getFrames() > 0;
+            }
+            brickStates[i] = bs;
+        }
+
         GameStateMessage.GameInfo gameInfo = new GameStateMessage.GameInfo();
         gameInfo.remainingTime = getRemainingTime();
         gameInfo.cameraX = camera != null ? camera.getX() : 0.0;
-        gameInfo.mapName = map.getPath();
+        gameInfo.mapName = "background.png";
         
-        return new GameStateMessage(playerStates, enemyStates, itemStates, fireballStates, gameInfo);
+        return new GameStateMessage(playerStates, enemyStates, itemStates, fireballStates, brickStates, gameInfo);
     }
     
+    // 클라이언트 입력을 받아 서버에서 플레이어 조작
     public void processInput(int playerId, int keyCode, boolean pressed, GameEngine engine) {
         Mario mario = getPlayer(playerId);
         if (mario == null) {
@@ -494,19 +554,19 @@ public class MapManager {
         
         if (pressed) {
             switch (keyCode) {
-                case 38:
-                case 87:
+                case 38: // Up
+                case 87: // W
                     mario.jump(engine);
                     break;
-                case 39:
-                case 68:
+                case 39: // Right
+                case 68: // D
                     mario.move(true, null);
                     break;
-                case 37:
-                case 65:
+                case 37: // Left
+                case 65: // A
                     mario.move(false, null);
                     break;
-                case 32:
+                case 32: // Space
                     fire(engine);
                     break;
             }
@@ -515,6 +575,7 @@ public class MapManager {
         }
     }
     
+    // 카메라 업데이트: 마리오가 화면 중앙을 넘으면 카메라 이동
     public void updateCamera(Camera camera) {
         if (camera == null || map == null) {
             return;
@@ -533,6 +594,7 @@ public class MapManager {
         }
     }
     
+    // Mario 객체를 PlayerState로 변환
     private GameStateMessage.PlayerState createPlayerState(Mario mario) {
         if (mario == null) {
             return null;
@@ -548,6 +610,7 @@ public class MapManager {
         ps.lives = mario.getRemainingLives();
         ps.coins = mario.getCoins();
         ps.points = mario.getPoints();
+        ps.damageInvincible = mario.isDamageInvincible();
         
         MarioForm marioForm = mario.getMarioForm();
         if (marioForm.isFire()) {
@@ -561,6 +624,7 @@ public class MapManager {
         return ps;
     }
     
+    // 서버로부터 받은 게임 상태를 로컬 플레이어에 적용 (클라이언트용)
     public void applyGameState(GameStateMessage state) {
         if (state == null || map == null) {
             return;
@@ -574,6 +638,7 @@ public class MapManager {
         }
     }
     
+    // PlayerState를 Mario 객체에 적용
     private void applyPlayerState(Mario mario, GameStateMessage.PlayerState state) {
         if (mario == null || state == null) {
             return;

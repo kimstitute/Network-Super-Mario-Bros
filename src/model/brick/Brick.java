@@ -7,11 +7,11 @@ import model.prize.Prize;
 
 import java.awt.image.BufferedImage;
 
+// 블록 기본 클래스: 일반 블록, 물음표 블록, 지면, 파이프의 부모 클래스
 public abstract class Brick extends GameObject{
 
-    private boolean breakable;
-
-    private boolean empty;
+    private boolean breakable; // 부술 수 있는지 (일반 블록)
+    private boolean empty; // 아이템이 비었는지 (물음표 블록)
 
     public Brick(double x, double y, BufferedImage style){
         super(x, y, style);

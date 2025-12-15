@@ -19,14 +19,13 @@ public class SuperMushroom extends BoostItem{
     public void onTouch(Mario mario, GameEngine engine) {
         mario.acquirePoints(getPoint());
 
-        ImageLoader imageLoader = new ImageLoader();
-
-        if(!mario.getMarioForm().isSuper()){
+        if(!mario.getMarioForm().isSuper() && engine != null){
+            ImageLoader imageLoader = engine.getImageLoader();
             BufferedImage[] leftFrames = imageLoader.getLeftFrames(MarioForm.SUPER);
             BufferedImage[] rightFrames = imageLoader.getRightFrames(MarioForm.SUPER);
 
             Animation animation = new Animation(leftFrames, rightFrames);
-            MarioForm newForm = new MarioForm(animation, true, false);
+            MarioForm newForm = new MarioForm(animation, true, false, imageLoader);
             mario.setMarioForm(newForm);
             mario.setDimension(48, 96);
 

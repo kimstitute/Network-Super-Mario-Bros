@@ -3,6 +3,7 @@ package view;
 import java.awt.*;
 import java.util.ArrayList;
 
+// 맵 선택 화면: 플레이 가능한 맵 목록 표시 및 선택 처리
 public class MapSelection {
 
     private ArrayList<String> maps = new ArrayList<>();
@@ -13,6 +14,7 @@ public class MapSelection {
         this.mapSelectionItems = createItems(this.maps);
     }
 
+    // 맵 선택 화면 렌더링
     public void draw(Graphics g){
         g.setColor(Color.BLACK);
         g.fillRect(0,0, 1280, 720);
@@ -37,12 +39,13 @@ public class MapSelection {
         }
     }
 
+    // 사용 가능한 맵 목록 로드
     private void getMaps(){
-        //TODO: read from file
         maps.add("Map 1.png");
         maps.add("Map 2.png");
     }
 
+    // 맵 선택 항목 UI 생성
     private MapSelectionItem[] createItems(ArrayList<String> maps){
         if(maps == null)
             return null;
@@ -57,6 +60,7 @@ public class MapSelection {
         return items;
     }
 
+    // 마우스 클릭 위치로 맵 선택
     public String selectMap(Point mouseLocation) {
         for(MapSelectionItem item : mapSelectionItems) {
             Dimension dimension = item.getDimension();
@@ -70,12 +74,14 @@ public class MapSelection {
         return null;
     }
 
+    // 인덱스로 맵 선택
     public String selectMap(int index){
         if(index < mapSelectionItems.length && index > -1)
             return mapSelectionItems[index].getName();
         return null;
     }
 
+    // 방향키로 맵 선택 변경 (순환)
     public int changeSelectedMap(int index, boolean up) {
         if(up){
             if(index <= 0)

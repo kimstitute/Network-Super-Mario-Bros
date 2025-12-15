@@ -2,6 +2,7 @@ package model;
 
 import java.awt.image.BufferedImage;
 
+// 종료 깃발: 마리오가 터치하면 하강 애니메이션 실행
 public class EndFlag extends GameObject{
 
     private boolean touched = false;
@@ -10,6 +11,7 @@ public class EndFlag extends GameObject{
         super(x, y, style);
     }
 
+    // 터치되면 깃발이 아래로 떨어지는 애니메이션
     @Override
     public void updateLocation() {
         if(touched){

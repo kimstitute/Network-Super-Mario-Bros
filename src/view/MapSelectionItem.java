@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
+// 맵 선택 항목: 맵 이름, 위치, 크기 정보
 public class MapSelectionItem {
 
     private BufferedImage image;
@@ -20,7 +21,6 @@ public class MapSelectionItem {
 
         this.dimension = new Dimension();
     }
-
 
     public String getName() {
         return name;
