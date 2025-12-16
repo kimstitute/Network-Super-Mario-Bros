@@ -622,11 +622,18 @@ public class GameEngine implements Runnable {
         return roomPlayerCount;
     }
 
-    // 서버로부터 받은 방 정보 업데이트 (플레이어 수, 방장 여부)
+    // 서버로부터 받은 방 정보 업데이트 (플레이어 수, 방장 여부, 내 플레이어 ID)
     public void updateRoomInfo(int playerCount, int hostClientId) {
         this.roomPlayerCount = playerCount;
+        
+        // NetworkManager로부터 실제 플레이어 ID 가져오기
+        if (networkManager != null) {
+            this.myPlayerId = networkManager.getCurrentPlayerId();
+            System.out.println("[GAME] *** My Player ID updated to: " + this.myPlayerId + " ***");
+        }
+        
         this.isRoomHost = (myPlayerId == hostClientId);
-        System.out.println("[GAME] Room info updated - players: " + playerCount + ", isHost: " + isRoomHost);
+        System.out.println("[GAME] Room info updated - players: " + playerCount + ", host=" + hostClientId + ", myId=" + myPlayerId + ", isHost: " + isRoomHost);
         uiManager.repaint();
     }
 
