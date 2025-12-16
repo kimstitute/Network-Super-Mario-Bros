@@ -102,7 +102,14 @@ public class Map {
     }
 
     private void drawBackground(Graphics2D g2){
-        g2.drawImage(backgroundImage, 0, 0, null);
+        // Map 2 (지하 레벨)는 검은색 배경
+        if (path != null && (path.contains("Map 2") || path.contains("map2") || path.contains("2"))) {
+            g2.setColor(Color.BLACK);
+            g2.fillRect(0, 0, 10752, 720);
+        } else {
+            // Map 1 (지상 레벨)는 배경 이미지
+            g2.drawImage(backgroundImage, 0, 0, null);
+        }
     }
 
     private void drawBricks(Graphics2D g2) {

@@ -669,19 +669,26 @@ public class UIManager extends JPanel{
         
         g2.translate(-cameraX, -cameraY);
         
-        g2.setColor(new Color(92, 148, 252));
-        g2.fillRect(cameraX, cameraY, getWidth(), getHeight());
+        // 맵 이름에 따라 배경 결정
+        String mapName = (gameState.getGameInfo() != null && gameState.getGameInfo().mapName != null) 
+                         ? gameState.getGameInfo().mapName : "Map 1.png";
         
-        if (gameState.getGameInfo() != null && gameState.getGameInfo().mapName != null) {
-            String backgroundName = gameState.getGameInfo().mapName;
-            if (mapBackgroundImage == null || !backgroundName.equals(currentMapName)) {
-                currentMapName = backgroundName;
-                mapBackgroundImage = engine.getImageLoader().loadImage("/" + backgroundName);
+        if (mapName.contains("Map 2") || mapName.contains("map2")) {
+            // Map 2 (지하 레벨) - 검은색 배경
+            g2.setColor(Color.BLACK);
+            g2.fillRect(cameraX, cameraY, getWidth(), getHeight());
+        } else {
+            // Map 1 (지상 레벨) - 파란 하늘 배경
+            g2.setColor(new Color(92, 148, 252));
+            g2.fillRect(cameraX, cameraY, getWidth(), getHeight());
+            
+            // 배경 이미지 로드 및 그리기 (지상만)
+            if (mapBackgroundImage == null) {
+                mapBackgroundImage = engine.getImageLoader().loadImage("/background.png");
             }
-        }
-        
-        if (mapBackgroundImage != null) {
-            g2.drawImage(mapBackgroundImage, 0, 0, null);
+            if (mapBackgroundImage != null) {
+                g2.drawImage(mapBackgroundImage, 0, 0, null);
+            }
         }
         
         drawBricksFromState(g2, gameState);
@@ -812,14 +819,19 @@ public class UIManager extends JPanel{
         if (bricks == null) {
             return;
         }
-        
+
         ImageLoader loader = engine.getImageLoader();
         
+        // 맵 이름 확인 (지하 레벨인지 체크)
+        String mapName = (gameState.getGameInfo() != null && gameState.getGameInfo().mapName != null) 
+                         ? gameState.getGameInfo().mapName : "Map 1.png";
+        boolean isUnderground = mapName.contains("Map 2") || mapName.contains("map2");
+
         for (network.protocol.GameStateMessage.BrickState brick : bricks) {
             if (brick == null) continue;
-            
+
             BufferedImage brickImage = null;
-            
+
             if ("OrdinaryBrick".equals(brick.type)) {
                 brickImage = loader.getSubImage(spriteSheet, 1, 1, 48, 48);
             } else if ("SurpriseBrick".equals(brick.type)) {
@@ -829,11 +841,17 @@ public class UIManager extends JPanel{
                     brickImage = loader.getSubImage(spriteSheet, 2, 1, 48, 48);
                 }
             } else if ("GroundBrick".equals(brick.type)) {
-                brickImage = loader.getSubImage(spriteSheet, 2, 2, 48, 48);
+                // groundBrick (빨간색): 원래 GroundBrick 스프라이트
+                // groundBrick2 (갈색): Map 2에서만 OrdinaryBrick 스프라이트
+                if (isUnderground) {
+                    brickImage = loader.getSubImage(spriteSheet, 1, 1, 48, 48); // Map 2: OrdinaryBrick 스프라이트
+                } else {
+                    brickImage = loader.getSubImage(spriteSheet, 2, 2, 48, 48); // Map 1: GroundBrick 스프라이트
+                }
             } else if ("Pipe".equals(brick.type)) {
                 brickImage = loader.getSubImage(spriteSheet, 3, 1, 96, 96);
             }
-            
+
             if (brickImage != null) {
                 g2.drawImage(brickImage, brick.x, brick.y, null);
             }

@@ -70,7 +70,8 @@ class MapCreator {
         // 기본 오브젝트
         int mario = new Color(160, 160, 160).getRGB();
         int ordinaryBrick = new Color(0, 0, 255).getRGB();
-        int groundBrick = new Color(255, 0, 0).getRGB();
+        int groundBrick = new Color(255, 0, 0).getRGB();              // Map 1 지면 (빨간색)
+        int groundBrick2 = new Color(127, 51, 0).getRGB();            // Map 2 지면 (갈색)
         int pipe = new Color(0, 255, 0).getRGB();
         int goomba = new Color(0, 255, 255).getRGB();
         int koopa = new Color(255, 0, 255).getRGB();
@@ -78,7 +79,6 @@ class MapCreator {
         
         // 배경 색상 (무시)
         int backgroundColor = new Color(0, 0, 0).getRGB();        // 검은색 - 빈 공간
-        int decorativeColor = new Color(127, 51, 0).getRGB();     // 갈색 - 배경 장식
         
         // 물음표 블록 (아이템 타입별)
         int surpriseBrick_random = new Color(255, 255, 0).getRGB();     // 밝은 노란색 - 랜덤 (기존)
@@ -98,7 +98,7 @@ class MapCreator {
                 int yLocation = y*pixelMultiplier;
 
                 // 배경 색상은 무시
-                if (currentPixel == backgroundColor || currentPixel == decorativeColor) {
+                if (currentPixel == backgroundColor) {
                     continue;
                 }
                 
@@ -150,8 +150,18 @@ class MapCreator {
                     createdMap.addGroundBrick(brick);
                 }
                 else if (currentPixel == groundBrick) {
+                    // 빨간색 지면: 항상 원래 GroundBrick 스프라이트 사용
                     Brick brick = new GroundBrick(xLocation, yLocation, this.groundBrick);
                     createdMap.addGroundBrick(brick);
+                }
+                else if (currentPixel == groundBrick2) {
+                    // 갈색 지면: Map 1에서는 생성 안 함 (투명), Map 2에서는 OrdinaryBrick 스프라이트 사용
+                    boolean isUnderground = mapPath != null && (mapPath.contains("Map 2") || mapPath.contains("map2"));
+                    if (isUnderground) {
+                        Brick brick = new GroundBrick(xLocation, yLocation, this.ordinaryBrick);
+                        createdMap.addGroundBrick(brick);
+                    }
+                    // Map 1에서는 아무것도 생성하지 않음 (투명)
                 }
                 else if (currentPixel == goomba) {
                     Enemy enemy = new Goomba(xLocation, yLocation, this.goombaLeft);

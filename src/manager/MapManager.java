@@ -540,7 +540,7 @@ public class MapManager {
         GameStateMessage.GameInfo gameInfo = new GameStateMessage.GameInfo();
         gameInfo.remainingTime = getRemainingTime();
         gameInfo.cameraX = camera != null ? camera.getX() : 0.0;
-        gameInfo.mapName = "background.png";
+        gameInfo.mapName = map.getPath(); // 실제 맵 이름 사용 (Map 1.png 또는 Map 2.png)
         
         return new GameStateMessage(playerStates, enemyStates, itemStates, fireballStates, brickStates, gameInfo);
     }
