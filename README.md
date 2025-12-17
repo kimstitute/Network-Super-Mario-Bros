@@ -571,6 +571,342 @@ src/
     └── UIManager.java           # 모든 UI 렌더링
 ```
 
+## 소스파일 목록
+
+### 서버 관련 파일 (14개)
+
+**네트워크 서버**
+- `network/server/GameServer.java` - 메인 게임 서버, TCP 연결 관리
+- `network/server/ClientHandler.java` - 클라이언트별 메시지 핸들러
+- `network/server/Room.java` - 방 관리 및 준비 상태 추적
+
+**게임 로직**
+- `manager/MapManager.java` - 서버 게임 로직, 충돌 처리
+- `manager/MapCreator.java` - PNG 파싱 및 맵 생성
+
+**프로토콜**
+- `network/protocol/Message.java` - 메시지 기본 클래스
+- `network/protocol/MessageType.java` - 메시지 타입 정의
+- `network/protocol/GameStateMessage.java` - 게임 상태 전송
+- `network/protocol/InputMessage.java` - 입력 전송
+- `network/protocol/ConnectedMessage.java` - 연결 승인
+- `network/protocol/ConnectMessage.java` - 연결 요청
+- `network/protocol/CreateRoomMessage.java` - 방 생성
+- `network/protocol/RoomInfoMessage.java` - 방 정보 업데이트
+- `network/protocol/GameStartMessage.java` - 게임 시작 알림
+
+### 클라이언트 관련 파일 (15개)
+
+**게임 엔진**
+- `manager/GameEngine.java` - 클라이언트 메인 엔진
+- `manager/InputManager.java` - 입력 수집 및 전송
+- `manager/Camera.java` - 카메라 위치 관리
+- `manager/SoundManager.java` - 사운드 재생
+- `manager/GameStatus.java` - 게임 상태 열거형
+- `manager/ButtonAction.java` - 버튼 액션 정의
+
+**네트워크 클라이언트**
+- `network/NetworkManager.java` - 네트워크 추상화 레이어
+- `network/client/GameClient.java` - TCP 소켓 통신
+
+**UI 및 뷰**
+- `view/UIManager.java` - 모든 화면 렌더링
+- `view/ImageLoader.java` - 이미지 로딩
+- `view/Animation.java` - 애니메이션 프레임
+- `view/StartScreenSelection.java` - 시작 화면 선택
+- `view/MapSelection.java` - 맵 선택 화면
+- `view/MapSelectionItem.java` - 맵 선택 아이템
+
+**랭킹**
+- `ranking/RankingManager.java` - 랭킹 관리
+
+### 게임 모델 파일 (21개)
+
+**게임 오브젝트**
+- `model/GameObject.java` - 모든 오브젝트 기본 클래스
+- `model/Map.java` - 맵 컨테이너
+- `model/EndFlag.java` - 깃발
+- `model/GameRecord.java` - 게임 기록
+
+**플레이어**
+- `model/hero/Mario.java` - 마리오 (물리, 상태)
+- `model/hero/MarioForm.java` - 마리오 폼 열거형
+- `model/hero/Fireball.java` - 파이어볼
+
+**블록**
+- `model/brick/Brick.java` - 블록 기본 클래스
+- `model/brick/OrdinaryBrick.java` - 일반 벽돌
+- `model/brick/SurpriseBrick.java` - 물음표 블록
+- `model/brick/GroundBrick.java` - 지면 블록
+- `model/brick/Pipe.java` - 파이프
+
+**적**
+- `model/enemy/Enemy.java` - 적 기본 클래스
+- `model/enemy/Goomba.java` - 굼바
+- `model/enemy/KoopaTroopa.java` - 쿠파
+
+**아이템**
+- `model/prize/Prize.java` - 프라이즈 기본 클래스
+- `model/prize/BoostItem.java` - 부스트 아이템 기본 클래스
+- `model/prize/Coin.java` - 코인
+- `model/prize/SuperMushroom.java` - 슈퍼 버섯
+- `model/prize/FireFlower.java` - 파이어 플라워
+- `model/prize/OneUpMushroom.java` - 1UP 버섯
+
+**총 50개 Java 파일**
+
+## 실행 순서
+
+### 서버 실행 흐름
+
+```mermaid
+graph TB
+    A[GameServer.main] --> B[GameServer 생성자]
+    B --> C[ImageLoader 초기화]
+    C --> D[MapManager 초기화]
+    D --> E[ServerSocket 생성<br/>포트 25565]
+    E --> F[클라이언트 연결 대기 루프]
+    F --> G[Socket 수락]
+    G --> H[ClientHandler 생성]
+    H --> I[ThreadPool에 제출]
+    I --> J[ClientHandler.run]
+    J --> K[메시지 수신 루프]
+    K --> L{메시지 타입}
+    L -->|CREATE_ROOM| M[createRoom]
+    L -->|READY| N[setPlayerReady]
+    N --> O{모두 준비?}
+    O -->|Yes| P[startGameForRoom]
+    P --> Q[MapManager.createMap]
+    Q --> R[MapCreator.createMap]
+    R --> S[픽셀 파싱]
+    S --> T[GameObject 생성]
+    T --> U[플레이어 초기화]
+    U --> V[Game Loop 시작<br/>60Hz]
+    V --> W[updateLocations<br/>checkCollisions]
+    W --> X[collectGameState]
+    X --> Y[broadcast<br/>20Hz]
+    Y --> K
+```
+
+### 클라이언트 실행 흐름
+
+```mermaid
+graph TB
+    A[GameEngine.main] --> B[GameEngine 생성자]
+    B --> C[NetworkManager 초기화]
+    C --> D[UIManager 초기화]
+    D --> E[InputManager 초기화]
+    E --> F[JFrame 생성 및 표시]
+    F --> G[Game Loop 시작<br/>60Hz]
+    G --> H{GameStatus}
+    H -->|START_SCREEN| I[시작 화면 렌더링]
+    I --> J[사용자 입력 대기]
+    J -->|CREATE ROOM| K[서버 연결]
+    K --> L[NetworkManager.connect]
+    L --> M[GameClient 생성]
+    M --> N[TCP 연결]
+    N --> O[메시지 수신 스레드 시작]
+    O --> P[CREATE_ROOM 전송]
+    P --> Q[STAGE_SELECTION]
+    Q --> R[맵 선택]
+    R --> S[WAITING_FOR_PLAYERS]
+    S --> T[READY 전송]
+    T --> U[GAME_START 수신]
+    U --> V[RUNNING]
+    V --> W[입력 수집]
+    W --> X[InputMessage 전송]
+    V --> Y[GameState 수신]
+    Y --> Z[렌더링]
+    Z --> V
+```
+
+### 상세 실행 단계
+
+**1단계: 서버 시작**
+```bash
+run_server.bat
+```
+- `GameServer.main()` 실행
+- 포트 25565에서 ServerSocket 생성
+- 클라이언트 연결 대기
+
+**2단계: 클라이언트 시작**
+```bash
+run_game.bat
+```
+- `GameEngine.main()` 실행 → `GameEngine()` 생성자 호출
+- `GameEngine.init()` → UI 컴포넌트 초기화
+- `GameEngine.start()` → 게임 루프 스레드 시작
+- `GameEngine.run()` → 60Hz 루프 실행
+- `UIManager` → 시작 화면 렌더링
+
+**3단계: 서버 연결**
+- 사용자가 "CREATE ROOM" 선택
+- `GameEngine.connectToServer()` 호출
+- `NetworkManager.connectToServer()` → `GameClient.connect()`
+- TCP 연결 수립 (localhost:25565)
+- `ClientHandler` 스레드 생성 (서버 측)
+- `CONNECTED` 메시지 수신 (clientId 할당)
+
+**4단계: 방 생성**
+- `NetworkManager.sendCreateRoomRequest()` 호출
+- `CREATE_ROOM` 메시지 전송
+- `ClientHandler.handleMessage()` → `GameServer.createRoom()`
+- `Room.addPlayer()` → 플레이어 추가
+- `ROOM_CREATED` 및 `ROOM_INFO_UPDATE` 수신
+- 게임 상태 전환: `CONNECTING` → `STAGE_SELECTION`
+
+**5단계: 맵 선택**
+- 사용자가 맵 선택 (Map 1 또는 Map 2)
+- 선택된 맵 이름 저장
+- 게임 상태 전환: `STAGE_SELECTION` → `WAITING_FOR_PLAYERS`
+
+**6단계: 준비 완료**
+- 사용자가 "READY" 클릭
+- `NetworkManager.sendReady()` 호출
+- `READY` 메시지 전송
+- `Room.setPlayerReady()` → 준비 상태 업데이트
+- `Room.areAllPlayersReady()` 확인
+
+**7단계: 게임 시작**
+- 모든 플레이어 준비 완료 시
+- `GameServer.startGameForRoom()` 호출
+- `MapManager.createMap()` → `MapCreator.createMap()`
+- PNG 이미지 로드 및 픽셀 순회
+- 색상별 GameObject 생성 (Mario, Brick, Enemy, Prize 등)
+- `MapManager.getPlayer()` → 각 플레이어 Mario 인스턴스 생성
+- `GAME_START` 메시지 브로드캐스트
+- 게임 루프 시작
+
+**8단계: 게임 루프 (서버)**
+- `GameServer.gameLoop()` 60Hz 실행
+  - `MapManager.updateLocations()` → 모든 오브젝트 위치 업데이트
+  - `MapManager.checkCollisions()` → 충돌 감지 및 처리
+  - 50ms마다 `MapManager.collectGameState()` → `GameStateMessage` 생성
+  - `GameServer.broadcastGameState()` → 모든 클라이언트에 전송
+  - 1초마다 `MapManager.updateTime()` → 게임 시간 감소
+
+**9단계: 게임 루프 (클라이언트)**
+- `GameEngine.run()` 60Hz 실행
+  - `GameClient` 수신 스레드에서 `GameStateMessage` 수신
+  - `NetworkManager.onGameStateReceived()` → 최신 상태 저장
+  - `UIManager.drawGameFromState()` → 렌더링
+    - 플레이어 (위치, 애니메이션, 폼)
+    - 적 (위치, 방향)
+    - 블록 (타입, 상태)
+    - 아이템 (위치)
+    - 파이어볼 (위치, 방향)
+    - HUD (점수, 생명, 코인, 시간)
+    - 리더보드 (플레이어 순위)
+
+**10단계: 입력 처리**
+- 사용자 키 입력 발생
+- `InputManager.keyPressed()/keyReleased()` 호출
+- 게임 상태가 `RUNNING`일 때만
+- `NetworkManager.sendInput(keyCode, pressed)` 호출
+- `InputMessage` 생성 및 전송
+- 서버: `ClientHandler.handleMessage()` → `GameServer.handleInput()`
+- 서버: `MapManager.processInput()` → `Mario` 속도/점프 설정
+
+**11단계: 게임 종료**
+- 플레이어 생명 0 또는 시간 초과
+- 클라이언트: 게임 상태 전환 `RUNNING` → `GAME_OVER`
+- 게임 오버 화면 표시
+- 랭킹 저장 (`RankingManager`)
+
+## 구현된 기능
+
+### 핵심 기능
+
+**1. 멀티플레이어 시스템**
+- 최대 4인 동시 플레이
+- 단일 공유 방 시스템
+- 방장 자동 할당 및 재할당
+- 준비 시스템 (모두 준비 시 자동 게임 시작)
+- 플레이어별 독립 카메라
+- 실시간 리더보드 (우측 상단)
+
+**2. 네트워크 프로토콜**
+
+**클라이언트 → 서버 메시지**
+- `CONNECT` - 서버 연결 요청
+- `CREATE_ROOM(mapName)` - 방 생성 및 맵 선택
+- `JOIN_ROOM` - 방 참가
+- `READY` - 준비 완료
+- `INPUT(keyCode, pressed)` - 키보드 입력
+- `DISCONNECT` - 연결 종료
+
+**서버 → 클라이언트 메시지**
+- `CONNECTED(clientId)` - 연결 승인 및 ID 할당
+- `ROOM_CREATED` - 방 생성 완료
+- `ROOM_INFO_UPDATE(playerCount, hostClientId)` - 방 정보 업데이트
+- `GAME_START` - 게임 시작 신호
+- `GAME_STATE` - 전체 게임 상태 (20Hz)
+  - PlayerState[] - 모든 플레이어 위치, 속도, 생명, 점수, 폼
+  - EnemyState[] - 모든 적 위치, 생존 여부
+  - ItemState[] - 모든 아이템 위치, 수집 여부
+  - FireballState[] - 모든 파이어볼 위치, 활성 상태
+  - BrickState[] - 모든 블록 위치, 타입, 빈 여부
+  - GameInfo - 시간, 카메라, 맵 이름
+
+**3. 게임 메커니즘**
+- 마리오 폼 변환 (SMALL → SUPER → FIRE)
+- 피격 무적 시간 (2초)
+- 점프 높이 조절 (키 홀드 시간)
+- 파이어볼 발사 (Fire Mario)
+- 코인 100개 수집 시 1UP
+- 시간 제한 (400초)
+- 생명 시스템 (기본 3개)
+
+**4. 블록 시스템**
+- OrdinaryBrick - 아래에서 충돌 시 파괴 (Super/Fire Mario)
+- SurpriseBrick - 아이템 생성 후 빈 블록 전환
+  - 랜덤 아이템 (레거시)
+  - 고정 아이템 (코인, 슈퍼버섯, 파이어플라워, 1UP버섯)
+- GroundBrick - 파괴 불가 지면
+- Pipe - 파괴 불가 장애물
+- 숨겨진 블록 - 일반 블록처럼 보이는 아이템 블록
+
+**5. 적 시스템**
+- Goomba - 좌우 이동, 밟기 처리
+- KoopaTroopa - 좌우 이동, 밟기 처리
+- 충돌 처리
+  - 위에서 밟기: 점수 획득, 적 제거
+  - 옆에서 충돌: 마리오 폼 다운그레이드
+- 파이어볼 타격 처리
+
+**6. 아이템 시스템**
+- Coin - 점수 50점, 100개 수집 시 1UP
+- SuperMushroom - SMALL → SUPER 변환
+- FireFlower - SUPER/SMALL → FIRE 변환
+- OneUpMushroom - 생명 +1
+
+**7. 물리 엔진**
+- 중력 시뮬레이션
+- 속도 및 가속도 계산
+- 충돌 감지 (상하좌우 바운딩 박스)
+- 점프 메커니즘
+
+**8. 맵 시스템**
+- PNG 이미지 기반 맵 제작
+- 픽셀 색상 → 게임 오브젝트 변환
+- 2개 스테이지 (지상, 지하)
+- 맵별 렌더링 규칙
+
+**9. UI 시스템**
+- 시작 화면
+- 맵 선택 화면
+- 대기실 (플레이어 수, 준비 상태)
+- 게임 화면
+  - HUD (점수, 생명, 코인, 시간)
+  - 리더보드 (플레이어 ID, 점수, 순위)
+- 게임 오버 화면
+- 랭킹 화면
+
+**10. 사운드 시스템**
+- 배경음악
+- 효과음 (점프, 코인, 파이어볼, 적 처치, 게임 오버 등)
+
 ## 빌드 및 실행
 
 ### 컴파일
@@ -593,15 +929,6 @@ run_server.bat
 run_game.bat
 ```
 
-### 실행 순서
-
-1. 서버를 먼저 실행한다.
-2. 클라이언트를 실행한다.
-3. CREATE ROOM을 선택하여 방을 생성한다.
-4. 맵을 선택한다 (Map 1 또는 Map 2).
-5. READY를 클릭하여 준비한다.
-6. 모든 플레이어가 준비하면 자동으로 게임이 시작된다.
-
 ## 기술 스택
 
 - **언어**: Java 17+
@@ -619,6 +946,51 @@ run_game.bat
 - ObjectOutputStream.reset() (메모리 누수 방지)
 - 단일 공유 방 시스템 (서버 부하 감소)
 
+## 프로젝트 정보
+
+### GitHub 저장소
+
+**Repository**: [https://github.com/user-name/Super-Mario-Bros](https://github.com/user-name/Super-Mario-Bros)
+
+본 프로젝트의 전체 소스코드, 커밋 히스토리, 이슈 트래킹은 GitHub에서 관리된다.
+
+### 기여도
+
+**개인 프로젝트**: 김민상 100%
+
+- 시스템 설계 및 아키텍처
+- 서버-클라이언트 네트워크 구현
+- 게임 로직 구현
+- UI/UX 구현
+- 테스트 및 디버깅
+
+### 원본 소스코드 출처
+
+본 프로젝트는 오픈소스 프로젝트를 기반으로 멀티플레이어 기능을 추가 구현하였다.
+
+**원본 프로젝트**
+- 출처: [https://github.com/Mohammad-Dwairi/SuperMario](https://github.com/Mohammad-Dwairi/SuperMario)
+- 라이선스: Open Source
+- 사용 범위: 기본 게임 로직, 그래픽 리소스, 물리 엔진
+
+**추가 구현 내용 (본인 작성)**
+- 전체 서버-클라이언트 아키텍처 설계 및 구현
+- 네트워크 프로토콜 설계 및 구현 (network 패키지 전체)
+- 멀티플레이어 시스템 (Room, 준비 시스템)
+- 권한 서버 게임 로직 (MapManager 서버 버전)
+- 클라이언트 렌더링 시스템 (GameStateMessage 기반)
+- 실시간 리더보드
+- 맵 선택 시스템
+- 입력 처리 네트워크 전송
+- 플레이어별 독립 카메라
+
+**수정 내용**
+- 단일 플레이어 → 멀티플레이어 전환
+- 로컬 게임 로직 → 서버 권한 로직
+- 직접 렌더링 → 네트워크 상태 기반 렌더링
+
 ## 라이선스
 
 본 프로젝트는 교육 목적으로 제작되었다.
+- 원본 프로젝트: Open Source
+- 추가 구현: 한성대학교 네트워크 프로그래밍 과제
