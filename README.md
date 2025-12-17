@@ -1,11 +1,11 @@
 # Super Mario Bros - 멀티플레이어 게임
 
-한성대학교 컴퓨터공학부 3학년 김민상  
+한성대학교 AI응용학과/컴퓨터공학부 김민상  
 네트워크 프로그래밍 - 2025년 2학기
 
 ## 개요
 
-본 프로젝트는 Java Swing 기반의 멀티플레이어 슈퍼 마리오 게임이다. 서버-클라이언트 아키텍처를 채택하여 권한 서버가 모든 게임 로직을 처리하고, 클라이언트는 입력 수집 및 렌더링만 담당하는 구조로 설계되었다.
+본 프로젝트는 Java Swing 기반 멀티플레이어 슈퍼마리오 게임이다. 서버-클라이언트 아키텍처를 채택하여 권한 서버가 모든 게임 로직을 처리하고, 클라이언트는 입력 수집 및 렌더링만 담당하는 구조로 설계되었다.
 
 ## 시스템 아키텍처
 
@@ -950,7 +950,7 @@ run_game.bat
 
 ### GitHub 저장소
 
-**Repository**: [https://github.com/user-name/Super-Mario-Bros](https://github.com/user-name/Super-Mario-Bros)
+**Repository**: [https://github.com/kimstitute/Network-Super-Mario-Bros](https://github.com/kimstitute/Network-Super-Mario-Bros)
 
 본 프로젝트의 전체 소스코드, 커밋 히스토리, 이슈 트래킹은 GitHub에서 관리된다.
 
